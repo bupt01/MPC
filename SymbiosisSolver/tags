@@ -1,0 +1,358 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+AvisoEvent	Types.h	/^struct AvisoEvent {$/;"	s
+AvisoEventVector	Types.h	/^typedef std::vector<AvisoEvent> AvisoEventVector;$/;"	t
+AvisoTrace	Types.h	/^typedef std::map<std::string, AvisoEventVector > AvisoTrace;$/;"	t
+CC	Makefile	/^CC=g++$/;"	m
+CFLAGS	Makefile	/^CFLAGS=-std=c++11 -c$/;"	m
+CallOperation	Operations.cpp	/^CallOperation::CallOperation() : Operation(){};$/;"	f	class:CallOperation
+CallOperation	Operations.cpp	/^CallOperation::CallOperation(string tid, int id, int scrLine, int destLine, string scrFilename, string destFilename)$/;"	f	class:CallOperation
+CallOperation	Operations.h	/^class CallOperation : public Operation{$/;"	c
+ConstModelGen	ConstraintModelGenerator.cpp	/^ConstModelGen::ConstModelGen()$/;"	f	class:ConstModelGen
+ConstModelGen	ConstraintModelGenerator.h	/^class ConstModelGen {$/;"	c
+EXECUTABLE	Makefile	/^EXECUTABLE=symbiosisSolver$/;"	m
+EventPair	Types.h	/^typedef std::pair<Segment,Segment> EventPair;$/;"	t
+LDFLAGS	Makefile	/^LDFLAGS=$/;"	m
+LINEMAX	GraphvizGenerator.cpp	29;"	d	file:
+LINEMAX	Z3Solver.cpp	25;"	d	file:
+LockPairOperation	Operations.cpp	/^LockPairOperation::LockPairOperation() : Operation(){}$/;"	f	class:LockPairOperation
+LockPairOperation	Operations.cpp	/^LockPairOperation::LockPairOperation(string tid, string variable, int varid, string f, int lockLn, int unlockLn, int unlockId)$/;"	f	class:LockPairOperation
+LockPairOperation	Operations.h	/^class LockPairOperation : public Operation{$/;"	c
+MAX_LINE_SIZE	Parameters.cpp	/^const int MAX_LINE_SIZE = 512;$/;"	v
+OBJECTS	Makefile	/^OBJECTS=$(SOURCES:.cpp=.o)$/;"	m
+Operation	Operations.cpp	/^Operation::Operation()$/;"	f	class:Operation
+Operation	Operations.cpp	/^Operation::Operation(string tid, int idOp)$/;"	f	class:Operation
+Operation	Operations.cpp	/^Operation::Operation(string tid, string variable, int varid, int srcline, string f)$/;"	f	class:Operation
+Operation	Operations.h	/^class Operation {$/;"	c
+PathOperation	Operations.cpp	/^PathOperation::PathOperation() : Operation(){}$/;"	f	class:PathOperation
+PathOperation	Operations.cpp	/^PathOperation::PathOperation(string tid, string variable, int varid, int srcline, string f, string exp)$/;"	f	class:PathOperation
+PathOperation	Operations.h	/^class PathOperation : public Operation{$/;"	c
+READ	Util.cpp	22;"	d	file:
+RWOperation	Operations.cpp	/^RWOperation::RWOperation() : Operation(){}$/;"	f	class:RWOperation
+RWOperation	Operations.cpp	/^RWOperation::RWOperation(string tid, string variable, int varid, int srcline, string f, string val, bool write)$/;"	f	class:RWOperation
+RWOperation	Operations.h	/^class RWOperation : public Operation{$/;"	c
+SOURCES	Makefile	/^SOURCES=ConstraintModelGenerator.cpp GraphvizGenerator.cpp JPFParser.cpp KQueryParser.cpp main.cpp Operations.cpp Parameters.cpp Types.cpp Util.cpp Schedule.cpp Z3Solver.cpp$/;"	m
+Schedule	Parameters.h	/^typedef std::vector<Operation*> Schedule;$/;"	t
+Segment	Types.h	/^typedef std::pair<int,int> Segment;$/;"	t
+SyncOperation	Operations.cpp	/^SyncOperation::SyncOperation() : Operation(){}$/;"	f	class:SyncOperation
+SyncOperation	Operations.cpp	/^SyncOperation::SyncOperation(string tid, string variable, int varid, int srcline, string f, string t)$/;"	f	class:SyncOperation
+SyncOperation	Operations.h	/^class SyncOperation : public Operation{$/;"	c
+ThreadSegment	Types.h	/^struct ThreadSegment {$/;"	s
+Tokenize	GraphvizGenerator.cpp	/^void Tokenize(const string& str,$/;"	f
+WRITE	Util.cpp	23;"	d	file:
+Z3Solver	Z3Solver.cpp	/^Z3Solver::Z3Solver()$/;"	f	class:Z3Solver
+Z3Solver	Z3Solver.h	/^class Z3Solver {$/;"	c
+__SymbiosisSolverXcode__Schedule__	Schedule.h	10;"	d
+__symbiosisSolver__AvisoUtil__	Types.h	10;"	d
+__symbiosisSolver__ConstraintModelGenerator__	ConstraintModelGenerator.h	13;"	d
+__symbiosisSolver__GraphvizGenerator__	GraphvizGenerator.h	10;"	d
+__symbiosisSolver__JPFParser__	JPFParser.h	10;"	d
+__symbiosisSolver__KQueryParser__	KQueryParser.h	13;"	d
+__symbiosisSolver__Operations__	Operations.h	13;"	d
+__symbiosisSolver__Parameters__	Parameters.h	10;"	d
+__symbiosisSolver__Util__	Util.h	11;"	d
+__symbiosisSolver__Z3Solver__	Z3Solver.h	13;"	d
+_bindingPair	Operations.h	/^    std::map< std::string, std::string > _bindingPair;$/;"	m	class:CallOperation
+_destFilename	Operations.h	/^    std::string _destFilename;$/;"	m	class:CallOperation
+_destLine	Operations.h	/^    int _destLine;$/;"	m	class:CallOperation
+_srcFilename	Operations.h	/^    std::string _srcFilename;$/;"	m	class:CallOperation
+_srcLine	Operations.h	/^    int _srcLine;$/;"	m	class:CallOperation
+addAllReadDependencies	GraphvizGenerator.cpp	/^void addAllReadDependencies(vector<int>* exclusiveFailIds,vector<int>* exclusiveAltIds)$/;"	f
+addAvisoConstraints	ConstraintModelGenerator.cpp	/^void ConstModelGen::addAvisoConstraints(std::map<std::string, std::vector<Operation*> > operationsByThread, AvisoEventVector fulltrace)$/;"	f	class:ConstModelGen
+addForkStartConstraints	ConstraintModelGenerator.cpp	/^void ConstModelGen::addForkStartConstraints(map<string, vector<SyncOperation> > forkset, map<string, SyncOperation> startset)$/;"	f	class:ConstModelGen
+addJoinExitConstraints	ConstraintModelGenerator.cpp	/^void ConstModelGen::addJoinExitConstraints(std::map<string, vector<SyncOperation> > joinset, map<string, SyncOperation> exitset)$/;"	f	class:ConstModelGen
+addLockOp2Dependencies	GraphvizGenerator.cpp	/^void addLockOp2Dependencies(const vector<string>& schedule, ThreadSegment* tseg, int i, vector<int>* exclusiveSchIds)$/;"	f
+addLockingConstraints	ConstraintModelGenerator.cpp	/^void ConstModelGen::addLockingConstraints(map<string, vector<LockPairOperation> > lockpairset){$/;"	f	class:ConstModelGen
+addMemoryOrderConstraints	ConstraintModelGenerator.cpp	/^void ConstModelGen::addMemoryOrderConstraints(map<string, vector<Operation*> > operationsByThread)$/;"	f	class:ConstModelGen
+addPathConstraints	ConstraintModelGenerator.cpp	/^void ConstModelGen::addPathConstraints(vector<PathOperation> pathset){$/;"	f	class:ConstModelGen
+addReadWriteConstraints	ConstraintModelGenerator.cpp	/^void ConstModelGen::addReadWriteConstraints(map<string, vector<RWOperation> > readSet, map<string, vector<RWOperation> > writeSet, map<string, vector<Operation*> > operationsByThread){$/;"	f	class:ConstModelGen
+addWaitSignalConstraints	ConstraintModelGenerator.cpp	/^void ConstModelGen::addWaitSignalConstraints(map<string, vector<SyncOperation> > waitset, map<string, vector<SyncOperation> > signalset)$/;"	f	class:ConstModelGen
+altCounter	GraphvizGenerator.cpp	/^int altCounter = 0; \/\/counts the number of alternate schedules (used to name the output files)$/;"	v
+altScheduleOrd	Parameters.cpp	/^std::vector<std::string> altScheduleOrd;$/;"	v
+assertThread	Parameters.cpp	/^std::string assertThread = "";$/;"	v
+atrace	main.cpp	/^AvisoTrace atrace;          \/\/map: thread Id -> vector<avisoEvent>$/;"	v
+avisoFilePath	Parameters.cpp	/^std::string avisoFilePath = "";$/;"	v
+bugCauseToGviz	Types.cpp	/^std::string bugCauseToGviz(EventPair p, std::vector<std::string> solution)$/;"	f
+bugCauseToString	Types.cpp	/^std::string bugCauseToString(EventPair p, std::vector<std::string> solution)$/;"	f
+bugCondOps	Parameters.cpp	/^std::vector<std::string> bugCondOps;$/;"	v
+bugFixMode	Parameters.cpp	/^bool bugFixMode = false;$/;"	v
+cAnd	Z3Solver.cpp	/^string Z3Solver::cAnd(string exp1){$/;"	f	class:Z3Solver
+cAnd	Z3Solver.cpp	/^string Z3Solver::cAnd(string exp1, string exp2) {$/;"	f	class:Z3Solver
+cDiv	Z3Solver.cpp	/^string Z3Solver::cDiv(string exp1, string exp2){$/;"	f	class:Z3Solver
+cEq	Z3Solver.cpp	/^string Z3Solver::cEq(string exp1, string exp2){$/;"	f	class:Z3Solver
+cGeq	Z3Solver.cpp	/^string Z3Solver::cGeq(string exp1, string exp2){$/;"	f	class:Z3Solver
+cGt	Z3Solver.cpp	/^string Z3Solver::cGt(string exp1, string exp2){$/;"	f	class:Z3Solver
+cLeq	Z3Solver.cpp	/^string Z3Solver::cLeq(string exp1, string exp2){$/;"	f	class:Z3Solver
+cLt	Z3Solver.cpp	/^string Z3Solver::cLt(string exp1){$/;"	f	class:Z3Solver
+cLt	Z3Solver.cpp	/^string Z3Solver::cLt(string exp1, string exp2){$/;"	f	class:Z3Solver
+cMinus	Z3Solver.cpp	/^string Z3Solver::cMinus(string exp1, string exp2){$/;"	f	class:Z3Solver
+cMod	Z3Solver.cpp	/^string Z3Solver::cMod(string exp1, string exp2){$/;"	f	class:Z3Solver
+cMult	Z3Solver.cpp	/^string Z3Solver::cMult(string exp1, string exp2){$/;"	f	class:Z3Solver
+cNeq	Z3Solver.cpp	/^string Z3Solver::cNeq(string exp1, string exp2){$/;"	f	class:Z3Solver
+cOr	Z3Solver.cpp	/^string Z3Solver::cOr(string exp1){$/;"	f	class:Z3Solver
+cOr	Z3Solver.cpp	/^string Z3Solver::cOr(string exp1, string exp2){$/;"	f	class:Z3Solver
+cPlus	Z3Solver.cpp	/^string Z3Solver::cPlus(string exp1, string exp2){$/;"	f	class:Z3Solver
+cSummation	Z3Solver.cpp	/^string Z3Solver::cSummation(std::vector<string> sum){$/;"	f	class:Z3Solver
+changeChar2graphviz	GraphvizGenerator.cpp	/^string changeChar2graphviz(string specialChar, string htmlCode ,string op){$/;"	f
+checkSat	Z3Solver.cpp	/^bool Z3Solver::checkSat()$/;"	f	class:Z3Solver
+cleanCallFunc	GraphvizGenerator.cpp	/^string graphgen::cleanCallFunc(string funcSign)$/;"	f	class:graphgen
+cleanEmpty	Schedule.cpp	/^vector<string> cleanEmpty(const vector<string>& globalOrderTmp)$/;"	f
+cleanInitSpacesOp	GraphvizGenerator.cpp	/^string cleanInitSpacesOp(string ret)$/;"	f
+cleanOperation	GraphvizGenerator.cpp	/^string cleanOperation(string op)$/;"	f
+cleanRight	GraphvizGenerator.cpp	/^string graphgen::cleanRight(const string& op)$/;"	f	class:graphgen
+closeSolver	ConstraintModelGenerator.cpp	/^void ConstModelGen::closeSolver(){$/;"	f	class:ConstModelGen
+closeZ3	Z3Solver.cpp	/^void Z3Solver::closeZ3()$/;"	f	class:Z3Solver
+computeDataDependencies	GraphvizGenerator.cpp	/^void computeDataDependencies(vector<string> schedule){$/;"	f
+computeExclusiveDependencies	GraphvizGenerator.cpp	/^void computeExclusiveDependencies(vector<int>* exclusiveFailIds, vector<int>* exclusiveAltIds)$/;"	f
+computeSegments	GraphvizGenerator.cpp	/^vector<ThreadSegment> computeSegments( const vector<string>& schedule, vector<int>* exclusiveSchIds)$/;"	f
+computeSingleSegment	GraphvizGenerator.cpp	/^void computeSingleSegment(const vector<string>& schedule, vector<ThreadSegment>* segsList, vector<int>* exclusiveSchIds, int initSeg, int oit, string prevTid)$/;"	f
+containsBugCauseOp	GraphvizGenerator.cpp	/^bool containsBugCauseOp(ThreadSegment fseg, vector<string> sch, string bugCauseStr, string type)$/;"	f
+createZ3Solver	ConstraintModelGenerator.cpp	/^void ConstModelGen::createZ3Solver(){$/;"	f	class:ConstModelGen
+csr	Parameters.cpp	/^bool csr = false;$/;"	v
+cutOffIdenticalEvents	GraphvizGenerator.cpp	/^void cutOffIdenticalEvents(vector<ThreadSegment>* segsFail, vector<ThreadSegment>* segsAlt, vector<string>* failSchedule, vector<string>* altSchedule)$/;"	f
+cutOffOrphans	GraphvizGenerator.cpp	/^void cutOffOrphans( vector<ThreadSegment>* segsFail, vector<ThreadSegment>* segsAlt, vector<string>* failSchedule, vector<string>* altSchedule)$/;"	f
+cutOffPrefix	GraphvizGenerator.cpp	/^void cutOffPrefix( vector<ThreadSegment>* segsFail, vector<ThreadSegment>* segsAlt, vector<string>* failSchedule, vector<string>* altSchedule)$/;"	f
+debug	Parameters.cpp	/^bool debug = false;$/;"	v
+declareIntOrderVar	Z3Solver.cpp	/^string Z3Solver::declareIntOrderVar(string varname, int min, int max){$/;"	f	class:Z3Solver
+declareIntOrderVarAndStore	Z3Solver.cpp	/^string Z3Solver::declareIntOrderVarAndStore(string varname, int min, int max){$/;"	f	class:Z3Solver
+declareIntVar	Z3Solver.cpp	/^string Z3Solver::declareIntVar(string varname){$/;"	f	class:Z3Solver
+declareIntVar	Z3Solver.cpp	/^string Z3Solver::declareIntVar(string varname, int min, int max){$/;"	f	class:Z3Solver
+declareIntVarAndStore	Z3Solver.cpp	/^string Z3Solver::declareIntVarAndStore(string varname, int min, int max){$/;"	f	class:Z3Solver
+declareRealVar	Z3Solver.cpp	/^string Z3Solver::declareRealVar(string varname, int min, int max){$/;"	f	class:Z3Solver
+dependIdsAlt	GraphvizGenerator.cpp	/^map<string,int> dependIdsAlt;  \/\/map: operation -> position the alt schedule$/;"	v
+dependIdsFail	GraphvizGenerator.cpp	/^map<string,int> dependIdsFail; \/\/map: operation -> position the failing schedule$/;"	v
+dependencies	Types.h	/^    std::vector<int> dependencies; \/\/positions of the operations referring to dependencies$/;"	m	struct:ThreadSegment
+drawAllGraph	GraphvizGenerator.cpp	/^void graphgen::drawAllGraph(const map<EventPair, vector<string>>& altSchedules, const vector<string>& solution)$/;"	f	class:graphgen
+drawAllSegments	GraphvizGenerator.cpp	/^void drawAllSegments(ofstream &outFile, vector<ThreadSegment> segsSch, vector<string> schedule, string schType, string bugSolution)$/;"	f
+drawGraphviz	GraphvizGenerator.cpp	/^void graphgen::drawGraphviz(const vector<ThreadSegment>& segsFail, const vector<ThreadSegment>& segsAlt, const vector<string>& failSchedule, const vector<string>& altSchedule, const EventPair& invPair)$/;"	f	class:graphgen
+drawHeader	GraphvizGenerator.cpp	/^void drawHeader(ofstream &outFile, string bugSolution)$/;"	f
+dspFlag	Parameters.cpp	/^std::string dspFlag = "";$/;"	v
+endPos	Types.h	/^    int endPos;     \/\/end position$/;"	m	struct:ThreadSegment
+endTime	Parameters.cpp	/^time_t endTime;$/;"	v
+equals	Operations.cpp	/^bool RWOperation::equals(RWOperation op)$/;"	f	class:RWOperation
+exclusiveAlt	GraphvizGenerator.cpp	/^map<string,string> exclusiveAlt;    \/\/same as above, but only for the unique dependencies on failing schedule$/;"	v
+exclusiveFail	GraphvizGenerator.cpp	/^map<string,string> exclusiveFail;   \/\/same as above, but only for the unique dependencies on failing schedule$/;"	v
+exitset	main.cpp	/^map<string, SyncOperation> exitset;                     \/\/map thread id -> thread's exit operation$/;"	v
+expr	Operations.h	/^    std::string expr;    \/\/path condition (expression)$/;"	m	class:PathOperation
+extractFileBasename	Util.cpp	/^string util::extractFileBasename(char* path)$/;"	f	class:util
+extractFileBasename	Util.cpp	/^string util::extractFileBasename(string name)$/;"	f	class:util
+failScheduleOrd	Parameters.cpp	/^std::vector<Operation*> failScheduleOrd;$/;"	v
+failedExec	Parameters.cpp	/^bool failedExec = false;$/;"	v
+fakeUnlock	Operations.h	/^    bool fakeUnlock;      \/\/if true, indicates that the unlock operation was artificially injected to make the model feasible$/;"	m	class:LockPairOperation
+filename	Operations.h	/^    std::string filename;$/;"	m	class:Operation
+filename	Types.h	/^    std::string filename;$/;"	m	struct:AvisoEvent
+filenameComparator	main.cpp	/^bool filenameComparator(string a, string b)$/;"	f
+fillMaplockVariables	GraphvizGenerator.cpp	/^void fillMaplockVariables(string op)$/;"	f
+fillScheduleOrd	Schedule.cpp	/^void scheduleLIB::fillScheduleOrd(string tid, map<string,vector<Operation*>>* op_list, Schedule* sch)$/;"	f	class:scheduleLIB
+findBugRootCause	main.cpp	/^bool findBugRootCause(map<EventPair, vector<string>>* altSchedules, vector<string>* solutionRetriver)$/;"	f
+forkset	main.cpp	/^map<string, vector<SyncOperation> > forkset;            \/\/map thread id -> vector with thread's fork operations$/;"	v
+formulaFile	Parameters.cpp	/^std::string formulaFile = "";$/;"	v
+fulltrace	main.cpp	/^AvisoEventVector fulltrace; \/\/sorted vector containing all avisoEvents$/;"	v
+genAllGraphSchedules	GraphvizGenerator.cpp	/^void graphgen::genAllGraphSchedules(vector<string> failSchedule, map<EventPair, vector<string> > altSchedules)$/;"	f	class:graphgen
+genGraphSchedule	GraphvizGenerator.cpp	/^void graphgen::genGraphSchedule(vector<string> failSchedule, EventPair invPair, vector<string> altSchedule)$/;"	f	class:graphgen
+generateConstraintModel	main.cpp	/^void generateConstraintModel()$/;"	f
+generateEventPairs	main.cpp	/^vector<EventPair> generateEventPairs(map<string, int> mapOpToId, vector<string> opsToInvert)$/;"	f
+generateNewSchedule	main.cpp	/^vector<string> generateNewSchedule(EventPair invPair)$/;"	f
+getCodeLine	GraphvizGenerator.cpp	/^string graphgen::getCodeLine(int line, string filename, string type)$/;"	f	class:graphgen
+getConstraintName	Operations.cpp	/^string CallOperation::getConstraintName(){$/;"	f	class:CallOperation
+getConstraintName	Operations.cpp	/^string Operation::getConstraintName()$/;"	f	class:Operation
+getConstraintName	Operations.cpp	/^string RWOperation::getConstraintName()$/;"	f	class:RWOperation
+getConstraintName	Operations.cpp	/^string SyncOperation::getConstraintName()$/;"	f	class:SyncOperation
+getContextSwitchNum	Schedule.cpp	/^int scheduleLIB::getContextSwitchNum(const Schedule& sch){$/;"	f	class:scheduleLIB
+getDependencePort	GraphvizGenerator.cpp	/^string getDependencePort(string op, string schType)$/;"	f
+getExpression	Operations.cpp	/^string PathOperation::getExpression(){$/;"	f	class:PathOperation
+getFilename	Operations.cpp	/^string Operation::getFilename(){$/;"	f	class:Operation
+getFilenameOp	GraphvizGenerator.cpp	/^string getFilenameOp(string op)$/;"	f
+getFunCallFriendlyOp	GraphvizGenerator.cpp	/^string getFunCallFriendlyOp(string instrCall)$/;"	f
+getInitialValueName	Operations.cpp	/^string RWOperation::getInitialValueName()$/;"	f	class:RWOperation
+getLine	Operations.cpp	/^int Operation::getLine(){$/;"	f	class:Operation
+getLineOp	GraphvizGenerator.cpp	/^int getLineOp(string op)$/;"	f
+getLockLine	Operations.cpp	/^int LockPairOperation::getLockLine(){$/;"	f	class:LockPairOperation
+getLockOrderConstraintName	Operations.cpp	/^string LockPairOperation::getLockOrderConstraintName()$/;"	f	class:LockPairOperation
+getLockVarName	GraphvizGenerator.cpp	/^string getLockVarName(string filename, int line)$/;"	f
+getNumOps	Z3Solver.cpp	/^int Z3Solver::getNumOps(){$/;"	f	class:Z3Solver
+getOpDefinition	Z3Solver.cpp	/^string getOpDefinition(string line)$/;"	f
+getOrderConstraintName	Operations.cpp	/^std::string CallOperation::getOrderConstraintName()$/;"	f	class:CallOperation
+getOrderConstraintName	Operations.cpp	/^string Operation::getOrderConstraintName()$/;"	f	class:Operation
+getOrderConstraintName	Operations.cpp	/^string RWOperation::getOrderConstraintName()$/;"	f	class:RWOperation
+getOrderConstraintName	Operations.cpp	/^string SyncOperation::getOrderConstraintName()$/;"	f	class:SyncOperation
+getOrderConstraintName2	Operations.cpp	/^std::string CallOperation::getOrderConstraintName2()$/;"	f	class:CallOperation
+getOrderConstraintName2	Operations.cpp	/^string Operation::getOrderConstraintName2()$/;"	f	class:Operation
+getOrderConstraintName2	Operations.cpp	/^string RWOperation::getOrderConstraintName2()$/;"	f	class:RWOperation
+getOrderConstraintName2	Operations.cpp	/^string SyncOperation::getOrderConstraintName2()$/;"	f	class:SyncOperation
+getSolutionStr	Schedule.cpp	/^vector<string> scheduleLIB::getSolutionStr(Schedule schedule){$/;"	f	class:scheduleLIB
+getTEI	Schedule.cpp	/^Schedule scheduleLIB::getTEI(Schedule schedule, int startPostion){$/;"	f	class:scheduleLIB
+getTEIsize	Schedule.cpp	/^int scheduleLIB::getTEIsize(Schedule schedule, int initPosition)$/;"	f	class:scheduleLIB
+getThreadId	Operations.cpp	/^string Operation::getThreadId(){$/;"	f	class:Operation
+getTidOperation	Schedule.cpp	/^string scheduleLIB::getTidOperation(Operation op)$/;"	f	class:scheduleLIB
+getType	Operations.cpp	/^string SyncOperation::getType(){$/;"	f	class:SyncOperation
+getUnlockLine	Operations.cpp	/^int LockPairOperation::getUnlockLine(){$/;"	f	class:LockPairOperation
+getUnlockOrderConstraintName	Operations.cpp	/^string LockPairOperation::getUnlockOrderConstraintName()$/;"	f	class:LockPairOperation
+getUnlockVarId	Operations.cpp	/^int LockPairOperation::getUnlockVarId(){$/;"	f	class:LockPairOperation
+getValue	Operations.cpp	/^string RWOperation::getValue(){$/;"	f	class:RWOperation
+getVarBind	GraphvizGenerator.cpp	/^string getVarBind(string srcLine, string destLine)$/;"	f
+getVarCall	GraphvizGenerator.cpp	/^vector<string> getVarCall(string lineC)$/;"	f
+getVarID	GraphvizGenerator.cpp	/^int getVarID(string op)$/;"	f
+getVarName	GraphvizGenerator.cpp	/^string getVarName(int varID)$/;"	f
+getVarNameFromCodeLine	GraphvizGenerator.cpp	/^string getVarNameFromCodeLine(string codeLine)$/;"	f
+getVarSignature	GraphvizGenerator.cpp	/^vector<string> getVarSignature(string lineC)$/;"	f
+getVarValue	GraphvizGenerator.cpp	/^string getVarValue(string op, string schType)$/;"	f
+getVariableId	Operations.cpp	/^int Operation::getVariableId(){$/;"	f	class:Operation
+getVariableName	Operations.cpp	/^string Operation::getVariableName(){$/;"	f	class:Operation
+getWritesForRead	ConstraintModelGenerator.cpp	/^vector<RWOperation> ConstModelGen::getWritesForRead(RWOperation readOp, std::vector<RWOperation> writeset)$/;"	f	class:ConstModelGen
+graphgen	GraphvizGenerator.h	/^namespace graphgen{$/;"	n
+hasDependencies	Types.h	/^    bool hasDependencies; \/\/indicates if this segment contains an operation that is involved in a data-dependence$/;"	m	struct:ThreadSegment
+hasNextTEI	Schedule.cpp	/^int scheduleLIB::hasNextTEI(Schedule sch, int pos)$/;"	f	class:scheduleLIB
+id	Operations.h	/^    int id;                 \/\/id used to uniquely identify the i-th read access to the variable$/;"	m	class:Operation
+initPos	Types.h	/^    int initPos;    \/\/initial position of the segment in the vector representing the schedule$/;"	m	struct:ThreadSegment
+insertTEI	Schedule.cpp	/^Schedule scheduleLIB::insertTEI(Schedule schedule, int newPosition, Schedule tei)$/;"	f	class:scheduleLIB
+intValueOf	Util.cpp	/^int util::intValueOf(std::string i)$/;"	f	class:util
+invertBugCondition	Z3Solver.cpp	/^string Z3Solver::invertBugCondition(string expr){$/;"	f	class:Z3Solver
+isClosedExpression	Util.cpp	/^bool util::isClosedExpression(string expr)$/;"	f	class:util
+isFakeUnlock	Operations.cpp	/^bool LockPairOperation::isFakeUnlock(){$/;"	f	class:LockPairOperation
+isLastActionTEI	Schedule.cpp	/^bool scheduleLIB::isLastActionTEI(Schedule sch, int pos)$/;"	f	class:scheduleLIB
+isReadBugCondition	GraphvizGenerator.cpp	/^bool isReadBugCondition(string readFail){$/;"	f
+isUnsatCoreOp	GraphvizGenerator.cpp	/^bool isUnsatCoreOp(string varFail)$/;"	f
+isWrite	Operations.h	/^    bool isWrite;   \/\/boolean indicating whether this operation is a write or not$/;"	m	class:RWOperation
+isWriteOp	Operations.cpp	/^bool RWOperation::isWriteOp(){$/;"	f	class:RWOperation
+joinset	main.cpp	/^map<string, vector<SyncOperation> > joinset;            \/\/map thread id -> vector with thread's join operations$/;"	v
+jpfMode	Parameters.cpp	/^bool jpfMode = false;$/;"	v
+jpfparser	JPFParser.h	/^namespace jpfparser{$/;"	n
+kqueryparser	KQueryParser.h	/^namespace kqueryparser{$/;"	n
+line	Operations.h	/^    int line;               \/\/source code line$/;"	m	class:Operation
+lineCode_pid	GraphvizGenerator.cpp	/^pid_t lineCode_pid;                          \/\/id of the process running getCodeLine()$/;"	v
+loadSchedule	Schedule.cpp	/^void scheduleLIB::loadSchedule(const vector<string>& globalOrderTmp)$/;"	f	class:scheduleLIB
+loadVarValuesFromFile	Util.cpp	/^std::map<std::string, std::string> util::loadVarValuesFromFile(std::string filename)$/;"	f	class:util
+loc	Types.h	/^    int loc;$/;"	m	struct:AvisoEvent
+lockVariables	GraphvizGenerator.cpp	/^map<int,string> lockVariables; \/\/map: lockID -> lockVariable$/;"	v
+lockpairStack	main.cpp	/^map<string, map<string, stack<LockPairOperation> > > lockpairStack;   \/\/map object id -> (map thread id -> stack with incomplete locking pairs)$/;"	v
+lockpairset	main.cpp	/^map<string, vector<LockPairOperation> > lockpairset;    \/\/map object id -> vector with object's lock pair operations$/;"	v
+look4LineWith	GraphvizGenerator.cpp	/^string look4LineWith(string token, int line, string filename)$/;"	f
+main	main.cpp	/^int main(int argc, char *const* argv)$/;"	f
+makeInstrFriendly	GraphvizGenerator.cpp	/^string makeInstrFriendly(string instruction){$/;"	f
+markAtomic	Types.h	/^    bool markAtomic; \/\/indicates if this segment should be marked as amotic in the graphviz file$/;"	m	struct:ThreadSegment
+moveDownTEI	Schedule.cpp	/^Schedule scheduleLIB::moveDownTEI(Schedule schedule, ConstModelGen *cmgen)$/;"	f	class:scheduleLIB
+moveTEISch	Schedule.cpp	/^Schedule scheduleLIB::moveTEISch(Schedule list,int newPositon, int oldPosition)$/;"	f	class:scheduleLIB
+moveUpTEI	Schedule.cpp	/^Schedule scheduleLIB::moveUpTEI(Schedule schedule,ConstModelGen *cmgen, bool isReverse)$/;"	f	class:scheduleLIB
+numDepDifDebug	Parameters.cpp	/^int numDepDifDebug = 0;      /;"	v
+numDepFull	Parameters.cpp	/^int numDepFull = 0;$/;"	v
+numEventsDifDebug	Parameters.cpp	/^int numEventsDifDebug = 0;$/;"	v
+numIncLockPairs	main.cpp	/^int numIncLockPairs = 0;    \/\/number of incomplete locking pairs, taking into account all objects$/;"	v
+numLO	ConstraintModelGenerator.h	/^    double numLO; \/\/number of locking order constraints$/;"	m	class:ConstModelGen
+numMO	ConstraintModelGenerator.h	/^    double numMO; \/\/number of memory order constraints$/;"	m	class:ConstModelGen
+numOps	GraphvizGenerator.cpp	/^int numOps;                             \/\/number of operations to ordered$/;"	v
+numOps	Z3Solver.h	/^    int numOps;                             \/\/number of operations to ordered$/;"	m	class:Z3Solver
+numPC	ConstraintModelGenerator.h	/^    double numPC; \/\/number of path constraints$/;"	m	class:ConstModelGen
+numPO	ConstraintModelGenerator.h	/^    double numPO; \/\/number of partial order synchronization constraints$/;"	m	class:ConstModelGen
+numRW	ConstraintModelGenerator.h	/^    double numRW; \/\/number of read-write constraints$/;"	m	class:ConstModelGen
+numUnkownVars	ConstraintModelGenerator.h	/^    double numUnkownVars; \/\/number of unknown variables$/;"	m	class:ConstModelGen
+obj	Operations.h	/^    std::string obj;$/;"	m	class:LockPairOperation
+openInputFile	Z3Solver.cpp	/^void Z3Solver::openInputFile()$/;"	f	class:Z3Solver
+openOutputFile	ConstraintModelGenerator.cpp	/^void ConstModelGen::openOutputFile(){$/;"	f	class:ConstModelGen
+openOutputFile	Z3Solver.cpp	/^void Z3Solver::openOutputFile()$/;"	f	class:Z3Solver
+operationLIB	Operations.h	/^namespace operationLIB{$/;"	n
+operationsByThread	Parameters.cpp	/^std::map<std::string, std::vector<Operation*> > operationsByThread;    \/\/map thread id -> vector with thread's operations$/;"	v
+operationsVars	GraphvizGenerator.cpp	/^std::vector<std::string> operationsVars;    \/\/vector containing the operation variables$/;"	v
+operationsVars	Z3Solver.h	/^    std::vector<std::string> operationsVars;    \/\/vector containing the operation variables$/;"	m	class:Z3Solver
+orderVars	GraphvizGenerator.cpp	/^std::vector<std::string> orderVars;         \/\/vector containing the operation order variables$/;"	v
+orderVars	Z3Solver.h	/^    std::vector<std::string> orderVars;         \/\/vector containing the operation order variables$/;"	m	class:Z3Solver
+pairToString	Types.cpp	/^std::string pairToString(EventPair p, std::vector<std::string> solution)$/;"	f
+parseLeftRightExpr	JPFParser.cpp	/^void jpfparser::parseLeftRightExpr(string expr, string &l, string &r, string &o)$/;"	f	class:jpfparser
+parseLeftRightExpr	KQueryParser.cpp	/^void kqueryparser::parseLeftRightExpr(string expr, string &l, string &r)$/;"	f	class:kqueryparser
+parseOperation	Operations.cpp	/^std::string operationLIB::parseOperation(std::string op)$/;"	f	class:operationLIB
+parseThreadId	Operations.cpp	/^std::string operationLIB::parseThreadId(std::string op)$/;"	f	class:operationLIB
+parseVar	Util.cpp	/^std::string util::parseVar(std::string op)$/;"	f	class:util
+parse_args	main.cpp	/^void parse_args(int argc, char *const* argv)$/;"	f
+parse_avisoTrace	main.cpp	/^void parse_avisoTrace()$/;"	f
+parse_constraints	main.cpp	/^void parse_constraints(string symbFilePath)$/;"	f
+pathset	main.cpp	/^vector<PathOperation> pathset;$/;"	v
+popen2	Util.cpp	/^pid_t util::popen2(const char *command, int *infp, int *outfp)$/;"	f	class:util
+postAssert	Z3Solver.cpp	/^string Z3Solver::postAssert(string constraint){$/;"	f	class:Z3Solver
+postNamedAssert	Z3Solver.cpp	/^string Z3Solver::postNamedAssert(string constraint,string label){$/;"	f	class:Z3Solver
+print	Operations.cpp	/^void CallOperation::print()$/;"	f	class:CallOperation
+print	Operations.cpp	/^void LockPairOperation::print()$/;"	f	class:LockPairOperation
+print	Operations.cpp	/^void Operation::print()$/;"	f	class:Operation
+print	Operations.cpp	/^void PathOperation::print(){$/;"	f	class:PathOperation
+print	Operations.cpp	/^void RWOperation::print()$/;"	f	class:RWOperation
+print	Operations.cpp	/^void SyncOperation::print()$/;"	f	class:SyncOperation
+printSch	Schedule.cpp	/^void scheduleLIB::printSch(const Schedule& sch)$/;"	f	class:scheduleLIB
+print_state	Util.cpp	/^void util::print_state (const std::ios& stream) {$/;"	f	class:util
+procR	GraphvizGenerator.cpp	/^int procR, procW;                           \/\/pipes to read from and write to the process running getCodeLine()$/;"	v
+procR	Z3Solver.h	/^    int procR, procW;                           \/\/pipes to read from and write to the process running z3$/;"	m	class:Z3Solver
+procW	GraphvizGenerator.cpp	/^int procR, procW;                           \/\/pipes to read from and write to the process running getCodeLine()$/;"	v
+procW	Z3Solver.h	/^    int procR, procW;                           \/\/pipes to read from and write to the process running z3$/;"	m	class:Z3Solver
+readDependAlt	GraphvizGenerator.cpp	/^map<string,string> readDependAlt;   \/\/[alternate schedule] map: R operation -> last W operation on the same var$/;"	v
+readDependFail	GraphvizGenerator.cpp	/^map<string,string> readDependFail;  \/\/[failing schedule] map: R operation -> last W operation on the same var (this means that R is data dependent on W)$/;"	v
+readLinePipe	Z3Solver.cpp	/^string Z3Solver::readLinePipe()$/;"	f	class:Z3Solver
+relevantThreads	GraphvizGenerator.cpp	/^set<string> relevantThreads; \/\/set containing the threads that are relevant (i.e. that have operations with exclusive data-dependencies)$/;"	v
+removeComment	GraphvizGenerator.cpp	/^string removeComment(string op)$/;"	f
+removeTEI	Schedule.cpp	/^Schedule scheduleLIB::removeTEI(Schedule schedule, int initPosition)$/;"	f	class:scheduleLIB
+reset	Z3Solver.cpp	/^void Z3Solver::reset()$/;"	f	class:Z3Solver
+resetSolver	ConstraintModelGenerator.cpp	/^void ConstModelGen::resetSolver(){$/;"	f	class:ConstModelGen
+saveScheduleFile	Schedule.cpp	/^void scheduleLIB::saveScheduleFile(string filename, const vector<string>& listOp){$/;"	f	class:scheduleLIB
+saveVarValues2File	Util.cpp	/^void util::saveVarValues2File(std::string filename, std::map<std::string, std::string> mapValues)$/;"	f	class:util
+schedule2string	Schedule.cpp	/^std::vector<std::string> scheduleLIB::schedule2string(const Schedule& schedule)$/;"	f	class:scheduleLIB
+scheduleLIB	Schedule.h	/^namespace scheduleLIB{$/;"	n
+scheduleSimplify	Schedule.cpp	/^Schedule scheduleLIB::scheduleSimplify(Schedule schedule, ConstModelGen *cmgen)$/;"	f	class:scheduleLIB
+setExpression	Operations.cpp	/^void PathOperation::setExpression(string exp){$/;"	f	class:PathOperation
+setFakeUnlock	Operations.cpp	/^void LockPairOperation::setFakeUnlock(bool isFake){$/;"	f	class:LockPairOperation
+setFilename	Operations.cpp	/^void Operation::setFilename(string f){$/;"	f	class:Operation
+setIsWrite	Operations.cpp	/^void RWOperation::setIsWrite(bool write){$/;"	f	class:RWOperation
+setLine	Operations.cpp	/^void  Operation::setLine(int srcline){$/;"	f	class:Operation
+setLockLine	Operations.cpp	/^void LockPairOperation::setLockLine(int lockLn){$/;"	f	class:LockPairOperation
+setNumOps	Z3Solver.cpp	/^void Z3Solver::setNumOps(int n){$/;"	f	class:Z3Solver
+setThreadId	Operations.cpp	/^void Operation::setThreadId(std::string tid){$/;"	f	class:Operation
+setType	Operations.cpp	/^void SyncOperation::setType(string t){$/;"	f	class:SyncOperation
+setUnlockLine	Operations.cpp	/^void LockPairOperation::setUnlockLine(int unlockLn){$/;"	f	class:LockPairOperation
+setUnlockVarId	Operations.cpp	/^void LockPairOperation::setUnlockVarId(int unlockId){$/;"	f	class:LockPairOperation
+setValue	Operations.cpp	/^void RWOperation::setValue(string val){$/;"	f	class:RWOperation
+setVariableId	Operations.cpp	/^void Operation::setVariableId(int varid){$/;"	f	class:Operation
+setVariableName	Operations.cpp	/^void Operation::setVariableName (std::string variable){$/;"	f	class:Operation
+signalset	main.cpp	/^map<string, vector<SyncOperation> > signalset;          \/\/map object id -> vector with object's signal operations$/;"	v
+solution	main.cpp	/^vector<string> solution;                                \/\/vector that stores a given schedule (i.e. solution) found by the solver (used in --fix-mode)$/;"	v
+solutionFile	Parameters.cpp	/^std::string solutionFile = "";$/;"	v
+solutionValues	Parameters.cpp	/^std::map<std::string,std::string> solutionValues;$/;"	v
+solutionValuesAlt	Parameters.cpp	/^std::map<std::string, std::string > solutionValuesAlt;$/;"	v
+solutionValuesFail	Parameters.cpp	/^std::map<std::string, std::string > solutionValuesFail;$/;"	v
+solve	ConstraintModelGenerator.cpp	/^bool ConstModelGen::solve(){$/;"	f	class:ConstModelGen
+solve	Z3Solver.cpp	/^bool Z3Solver::solve()$/;"	f	class:Z3Solver
+solveWithSolution	ConstraintModelGenerator.cpp	/^bool ConstModelGen::solveWithSolution(vector<string> solution, bool invertBugCond){$/;"	f	class:ConstModelGen
+solveWithSolution	Z3Solver.cpp	/^bool Z3Solver::solveWithSolution(vector<string> solution, bool invertBugCond)$/;"	f	class:Z3Solver
+solverPath	Parameters.cpp	/^std::string solverPath = "";$/;"	v
+sourceFilePath	Parameters.cpp	/^std::string sourceFilePath = "";$/;"	v
+splitVars	GraphvizGenerator.cpp	/^vector<string> splitVars(string vars)$/;"	f
+startTime	Parameters.cpp	/^time_t startTime;$/;"	v
+startset	main.cpp	/^map<string, SyncOperation> startset;                    \/\/map thread id -> thread's start operation$/;"	v
+storeLockPair	GraphvizGenerator.cpp	/^void storeLockPair(int lockVarID,string lockVarName)$/;"	f
+stringValueOf	Util.cpp	/^string util::stringValueOf(int i)$/;"	f	class:util
+symTracesByThread	main.cpp	/^map<string, vector<string> > symTracesByThread;         \/\/map thread id -> vector with the filenames of the symbolic traces$/;"	v
+symbFolderPath	Parameters.cpp	/^std::string symbFolderPath = "";$/;"	v
+syncset	main.cpp	/^vector<SyncOperation> syncset;$/;"	v
+threadId	Operations.h	/^    std::string threadId;   \/\/thread id$/;"	m	class:Operation
+threadIds	Z3Solver.h	/^    std::vector<std::string> threadIds;          \/\/vector containing the thread ids$/;"	m	class:Z3Solver
+threadTabsPP	Util.cpp	/^string util::threadTabsPP(int tab)$/;"	f	class:util
+tid	Types.h	/^    std::string tid;$/;"	m	struct:AvisoEvent
+tid	Types.h	/^    std::string tid;$/;"	m	struct:ThreadSegment
+translateExprToZ3	JPFParser.cpp	/^string jpfparser::translateExprToZ3(std::string expr){$/;"	f	class:jpfparser
+translateExprToZ3	KQueryParser.cpp	/^string kqueryparser::translateExprToZ3(std::string expr){$/;"	f	class:kqueryparser
+type	Operations.h	/^    std::string type;$/;"	m	class:SyncOperation
+unlockLine	Operations.h	/^    int unlockLine;          \/\/unlock: source code line$/;"	m	class:LockPairOperation
+unlockVarId	Operations.h	/^    int unlockVarId;         \/\/unlock: unique variable identifier$/;"	m	class:LockPairOperation
+unsatCore	Parameters.cpp	/^std::vector<int> unsatCore;$/;"	v
+updateCounters	main.cpp	/^bool updateCounters(vector<string> keys, vector<int> *traceCounterByThread)$/;"	f
+util	Util.h	/^namespace util{$/;"	n
+value	Operations.h	/^    std::string value;   \/\/value written (for writes)$/;"	m	class:RWOperation
+var	Operations.h	/^    std::string var;        \/\/variable on which the operation is applied.$/;"	m	class:Operation
+verifyConstraintModel	main.cpp	/^bool verifyConstraintModel(ConstModelGen *cmgen)$/;"	f
+waitset	main.cpp	/^map<string, vector<SyncOperation> > waitset;            \/\/map object id -> vector with object's wait operations$/;"	v
+writeDependAlt	GraphvizGenerator.cpp	/^map<string,vector<string>> writeDependAlt; \/\/[alternate schedule] map: W operation -> R operations on the same var affected by this W$/;"	v
+writeDependFail	GraphvizGenerator.cpp	/^map<string,vector<string>> writeDependFail; \/\/[failing schedule] map: W operation -> R operations on the same var affected by this W$/;"	v
+writeLineZ3	Z3Solver.cpp	/^void Z3Solver::writeLineZ3(string content)$/;"	f	class:Z3Solver
+writeset	main.cpp	/^map<string, vector<RWOperation> > writeset;             \/\/map var id -> vector with variable's write operations$/;"	v
+z3File	Z3Solver.h	/^    std::ofstream z3File;                       \/\/z3 output file (containing the symbolic constraint model)$/;"	m	class:Z3Solver
+z3pid	Z3Solver.h	/^    pid_t z3pid;                                \/\/id of the process running z3$/;"	m	class:Z3Solver
+z3solver	ConstraintModelGenerator.h	/^    Z3Solver z3solver;$/;"	m	class:ConstModelGen

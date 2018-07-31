@@ -1,0 +1,8 @@
+#!/bin/bash
+
+CMD=example
+
+# echo ${CMD}
+
+make dekker1
+../../../../Engine/engine_p --last=0 --times=0 --trace=$PWD/ --solutions=1 dekker1_inst.bc 
