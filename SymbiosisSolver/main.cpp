@@ -29,13 +29,10 @@
 #include "GraphvizGenerator.h"
 #include "Schedule.h"
 #include "LEGraph.h"
-<<<<<<< HEAD
-#include "KQueryParser.h"
-=======
 #include "Fix.h"
 #include "KQueryParser.h"
+#include<cmath> 
 //#include "AtomicityUnit.h"
->>>>>>> 560a77928ae99e42683d212517329ad7a4f5b415
 
 #include <sys/timeb.h>
 #include <sys/time.h>
