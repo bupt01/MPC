@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "klee/Expr.h"
+#include "klee/Expr/Expr.h"
 
 #include <cassert>
 
@@ -15,31 +15,20 @@ using namespace klee;
 
 ///
 
-UpdateNode::UpdateNode(const UpdateNode *_next, 
-                       const ref<Expr> &_index, 
-                       const ref<Expr> &_value) 
-  : refCount(0),
-    stpArray(0),
-    next(_next),
-    index(_index),
-    value(_value) {
+UpdateNode::UpdateNode(const ref<UpdateNode> &_next, const ref<Expr> &_index,
+                       const ref<Expr> &_value)
+    : next(_next), index(_index), value(_value) {
+  // FIXME: What we need to check here instead is that _value is of the same width 
+  // as the range of the array that the update node is part of.
+  /*
   assert(_value->getWidth() == Expr::Int8 && 
          "Update value should be 8-bit wide.");
+  */
   computeHash();
-  if (next) {
-    ++next->refCount;
-    size = 1 + next->size;
-  }
-  else size = 1;
+  size = next.isNull() ? 1 : 1 + next->size;
 }
 
 extern "C" void vc_DeleteExpr(void*);
-
-UpdateNode::~UpdateNode() {
-  // XXX gross
-  if (stpArray)
-    ::vc_DeleteExpr(stpArray);
-}
 
 int UpdateNode::compare(const UpdateNode &b) const {
   if (int i = index.compare(b.index)) 
@@ -49,48 +38,24 @@ int UpdateNode::compare(const UpdateNode &b) const {
 
 unsigned UpdateNode::computeHash() {
   hashValue = index->hash() ^ value->hash();
-  if (next)
+  if (!next.isNull())
     hashValue ^= next->hash();
   return hashValue;
 }
 
 ///
 
-UpdateList::UpdateList(const Array *_root, const UpdateNode *_head)
-  : root(_root),
-    head(_head) {
-  if (head) ++head->refCount;
-}
-
-UpdateList::UpdateList(const UpdateList &b)
-  : root(b.root),
-    head(b.head) {
-  if (head) ++head->refCount;
-}
-
-UpdateList::~UpdateList() {
-  // We need to be careful and avoid recursion here. We do this in
-  // cooperation with the private dtor of UpdateNode which does not
-  // recursively free its tail.
-  while (head && --head->refCount==0) {
-    const UpdateNode *n = head->next;
-    delete head;
-    head = n;
-  }
-}
-
-UpdateList &UpdateList::operator=(const UpdateList &b) {
-  if (b.head) ++b.head->refCount;
-  if (head && --head->refCount==0) delete head;
-  root = b.root;
-  head = b.head;
-  return *this;
-}
+UpdateList::UpdateList(const Array *_root, const ref<UpdateNode> &_head)
+    : root(_root), head(_head) {}
 
 void UpdateList::extend(const ref<Expr> &index, const ref<Expr> &value) {
-  if (head) --head->refCount;
+  
+  if (root) {
+    assert(root->getDomain() == index->getWidth());
+    assert(root->getRange() == value->getWidth());
+  }
+
   head = new UpdateNode(head, index, value);
-  ++head->refCount;
 }
 
 int UpdateList::compare(const UpdateList &b) const {
@@ -106,8 +71,8 @@ int UpdateList::compare(const UpdateList &b) const {
   else if (getSize() > b.getSize()) return 1;    
 
   // XXX build comparison into update, make fast
-  const UpdateNode *an=head, *bn=b.head;
-  for (; an && bn; an=an->next,bn=bn->next) {
+  const auto *an = head.get(), *bn = b.head.get();
+  for (; an && bn; an = an->next.get(), bn = bn->next.get()) {
     if (an==bn) { // exploit shared list structure
       return 0;
     } else {
@@ -123,7 +88,7 @@ unsigned UpdateList::hash() const {
   unsigned res = 0;
   for (unsigned i = 0, e = root->name.size(); i != e; ++i)
     res = (res * Expr::MAGIC_HASH_CONSTANT) + root->name[i];
-  if (head)
+  if (head.get())
     res ^= head->hash();
   return res;
 }

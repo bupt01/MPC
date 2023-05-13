@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "klee/IncompleteSolver.h"
+#include "klee/Solver/IncompleteSolver.h"
 
-#include "klee/Constraints.h"
+#include "klee/Expr/Constraints.h"
 
 using namespace klee;
 using namespace llvm;
@@ -134,3 +134,16 @@ StagedSolverImpl::computeInitialValues(const Query& query,
   return secondary->impl->computeInitialValues(query, objects, values,
                                                hasSolution);
 }
+
+SolverImpl::SolverRunStatus StagedSolverImpl::getOperationStatusCode() {
+  return secondary->impl->getOperationStatusCode();
+}
+
+char *StagedSolverImpl::getConstraintLog(const Query& query) {
+  return secondary->impl->getConstraintLog(query);
+}
+
+void StagedSolverImpl::setCoreSolverTimeout(time::Span timeout) {
+  secondary->impl->setCoreSolverTimeout(timeout);
+}
+

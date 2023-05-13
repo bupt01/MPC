@@ -276,6 +276,40 @@ bool Z3Solver::checkSat_yqp()
 }
 
 
+bool Z3Solver::checkSat_lz()
+{
+	vector<string> globalOrderTmp (numOps+30000); //order of execution of each operation (we add a little extra room to account for errors in the parsing)
+	string line;
+	string opName;                   //indicates the name of the operation
+	bool isOrderOp = false;          //indicates that we have parsed an order constraint, thus we need to read its value
+	bool isReadOp = false;           //indicates that we have parsed an read operation, thus we need to read its value
+	map<string, string> readValues;  //map read operation -> read value
+	bool isSat = false;
+
+	unsatCoreStr.clear();
+	solutionValues.clear();
+	std::vector<std::string> allOperations; // yqp
+
+	ifstream fin;
+	fin.open((formulaFile + "_solution").c_str());
+	
+	char buf[1000000];
+	string ss;
+	while (!fin.eof() && 
+				line.compare("end") != 0 && line.compare("end") != 1)
+	{
+		
+        if(line.find("PC") !=std::string::npos
+					|| line.find("RWC")!=std::string::npos) {//get unsat core  
+			return false;	
+		}   
+		fin.getline(buf, 1000000);
+		line = buf;
+	}
+	return true;
+}
+
+
 /*
  *  Parses the solver output. If the model is satisfiable, return true and write the solution to file.
  *  Otherwise, return false and store the unsat core in a variable.
@@ -435,14 +469,59 @@ bool Z3Solver::solve_yqp()
     //** open input file again to read every line (this is needed because, for some reason.., writing the constraints directly into the pipe stops before reaching the end, for large constraint models)
 	//std::string cmd = "nohup z3 -T:30 -smt2 " + formulaFile + " > " + formulaFile + "_solution";
     clock_t b = clock();
-	std::string cmd = "nohup z3 -T:" + Time + " -smt2 " + formulaFile + " > " + formulaFile + "_solution";
+	std::string cmd = "nohup /home/z3-z3-4.8.8/build/z3 -T:" + Time + " -smt2 " + formulaFile + " > " + formulaFile + "_solution";
+	std::cout<<"cmd is"<<cmd<<std::endl;
 	system(cmd.c_str());
 	startTime = time(NULL);
-  
     bool success = checkSat_yqp();
-    cmd = "rm " + formulaFile + " " + formulaFile + "_solution -rf";
-    system(cmd.c_str());
 	
+	std::cout<<"file is:"<<formulaFile<<std::endl;
+	cmd = "mv " + formulaFile + "_solution /home/symbiosis-master/Tests/CTests/MPC/mymotivation/";
+	system(cmd.c_str());
+	cmd = "mv " + formulaFile + " /home/symbiosis-master/Tests/CTests/MPC/mymotivation/";
+	system(cmd.c_str());
+
+    cmd = "rm " + formulaFile + " " + formulaFile + "_solution -rf";
+	std::cout<<"file:"<<cmd<<"success:"<<success<<std::endl;
+    system(cmd.c_str());
+	long long end = getSystemTime();
+	gettimeofday(&endday, NULL);
+	int timeuse = 1000000 * ( endday.tv_sec - startday.tv_sec ) + 
+		endday.tv_usec - startday.tv_usec; 
+	//printf("Solver Time3: %d us\n", timeuse);
+    return success;
+}
+
+bool Z3Solver::solve_lz()
+{
+	timeout = false;
+	struct timeval startday, endday;
+	long long start=getSystemTime();	
+	gettimeofday(&startday, NULL);
+    writeLineZ3("(check-sat)\n");
+    writeLineZ3("(get-model)\n");
+    writeLineZ3("(get-unsat-core)\n");
+    writeLineZ3("(echo \"end\")\n(reset)\n");
+    z3File.close();
+    
+    //** open input file again to read every line (this is needed because, for some reason.., writing the constraints directly into the pipe stops before reaching the end, for large constraint models)
+	//std::string cmd = "nohup z3 -T:30 -smt2 " + formulaFile + " > " + formulaFile + "_solution";
+    clock_t b = clock();
+	std::string cmd = "nohup /home/z3-z3-4.8.8/build/z3 -T:" + Time + " -smt2 " + formulaFile + " > " + formulaFile + "_solution";
+	std::cout<<"cmd is"<<cmd<<std::endl;
+	system(cmd.c_str());
+	startTime = time(NULL);
+    bool success = checkSat_lz();
+	
+	std::cout<<"file is:"<<formulaFile<<std::endl;
+	cmd = "mv " + formulaFile + "_solution /home/symbiosis-master/Tests/CTests/MPC/mymotivation/";
+	system(cmd.c_str());
+	cmd = "mv " + formulaFile + " /home/symbiosis-master/Tests/CTests/MPC/mymotivation/";
+	system(cmd.c_str());
+
+    cmd = "rm " + formulaFile + " " + formulaFile + "_solution -rf";
+	std::cout<<"file:"<<cmd<<"success:"<<success<<std::endl;
+    system(cmd.c_str());
 	long long end = getSystemTime();
 	gettimeofday(&endday, NULL);
 	int timeuse = 1000000 * ( endday.tv_sec - startday.tv_sec ) + 

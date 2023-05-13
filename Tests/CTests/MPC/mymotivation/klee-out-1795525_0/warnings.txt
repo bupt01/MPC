@@ -1,0 +1,6 @@
+KLEE: WARNING: undefined reference to function: myAssert
+KLEE: WARNING: undefined reference to function: myPThreadCreate
+KLEE: WARNING: undefined reference to function: pthread_create
+KLEE: WARNING: undefined reference to function: pthread_join
+KLEE: WARNING: undefined reference to function: pthread_mutex_lock
+KLEE: WARNING: undefined reference to function: pthread_mutex_unlock

@@ -7,25 +7,17 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __UTIL_STPBUILDER_H__
-#define __UTIL_STPBUILDER_H__
+#ifndef KLEE_STPBUILDER_H
+#define KLEE_STPBUILDER_H
 
-#include "klee/util/ExprHashMap.h"
 #include "klee/Config/config.h"
+#include "klee/Expr/ArrayExprHash.h"
+#include "klee/Expr/ExprHashMap.h"
 
 #include <vector>
-#include <map>
 
 #define Expr VCExpr
-#ifdef HAVE_EXT_STP
 #include <stp/c_interface.h>
-#else
-#include "../../stp/c_interface/c_interface.h"
-#endif
-
-#if ENABLE_STPLOG == 1
-#include "stp/stplog.h"
-#endif
 #undef Expr
 
 namespace klee {
@@ -60,10 +52,18 @@ namespace klee {
     operator bool () { return H->expr; }
     operator ::VCExpr () { return H->expr; }
   };
+  
+  class STPArrayExprHash : public ArrayExprHash< ::VCExpr > {
+    
+    friend class STPBuilder;
+    
+  public:
+    STPArrayExprHash() {};
+    virtual ~STPArrayExprHash();
+  };
 
 class STPBuilder {
   ::VC vc;
-  ExprHandle tempVars[4];
   ExprHashMap< std::pair<ExprHandle, unsigned> > constructed;
 
   /// optimizeDivides - Rewrite division and reminders by constants
@@ -71,14 +71,9 @@ class STPBuilder {
   /// use.
   bool optimizeDivides;
 
-private:
-  unsigned getShiftBits(unsigned amount) {
-    unsigned bits = 1;
-    amount--;
-    while (amount >>= 1)
-      bits++;
-    return bits;
-  }
+  STPArrayExprHash _arr_hash;
+
+private:  
 
   ExprHandle bvOne(unsigned width);
   ExprHandle bvZero(unsigned width);
@@ -93,14 +88,16 @@ private:
   ExprHandle eqExpr(ExprHandle a, ExprHandle b);
 
   //logical left and right shift (not arithmetic)
-  ExprHandle bvLeftShift(ExprHandle expr, unsigned shift, unsigned shiftBits);
-  ExprHandle bvRightShift(ExprHandle expr, unsigned amount, unsigned shiftBits);
-  ExprHandle bvVarLeftShift(ExprHandle expr, ExprHandle amount, unsigned width);
-  ExprHandle bvVarRightShift(ExprHandle expr, ExprHandle amount, unsigned width);
-  ExprHandle bvVarArithRightShift(ExprHandle expr, ExprHandle amount, unsigned width);
+  ExprHandle bvLeftShift(ExprHandle expr, unsigned shift);
+  ExprHandle bvRightShift(ExprHandle expr, unsigned shift);
+  ExprHandle bvVarLeftShift(ExprHandle expr, ExprHandle shift);
+  ExprHandle bvVarRightShift(ExprHandle expr, ExprHandle shift);
+  ExprHandle bvVarArithRightShift(ExprHandle expr, ExprHandle shift);
+  ExprHandle extractPartialShiftValue(ExprHandle shift, unsigned width,
+                                      unsigned &shiftBits);
 
   ExprHandle constructAShrByConstant(ExprHandle expr, unsigned shift, 
-                                     ExprHandle isSigned, unsigned shiftBits);
+                                     ExprHandle isSigned);
   ExprHandle constructMulByConstant(ExprHandle expr, unsigned width, uint64_t x);
   ExprHandle constructUDivByConstant(ExprHandle expr_n, unsigned width, uint64_t d);
   ExprHandle constructSDivByConstant(ExprHandle expr_n, unsigned width, uint64_t d);
@@ -113,14 +110,13 @@ private:
   
   ::VCExpr buildVar(const char *name, unsigned width);
   ::VCExpr buildArray(const char *name, unsigned indexWidth, unsigned valueWidth);
-
+ 
 public:
   STPBuilder(::VC _vc, bool _optimizeDivides=true);
   ~STPBuilder();
 
   ExprHandle getTrue();
   ExprHandle getFalse();
-  ExprHandle getTempVar(Expr::Width w);
   ExprHandle getInitialRead(const Array *os, unsigned index);
 
   ExprHandle construct(ref<Expr> e) { 
@@ -132,4 +128,4 @@ public:
 
 }
 
-#endif
+#endif /* KLEE_STPBUILDER_H */

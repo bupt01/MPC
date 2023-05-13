@@ -7,15 +7,18 @@
 //
 //===----------------------------------------------------------------------===//
 
+#define DEBUG_TYPE "TreeStreamWriter"
 #include "klee/Internal/ADT/TreeStream.h"
 
+#include "klee/Internal/Support/Debug.h"
+
 #include <cassert>
-#include <iostream>
 #include <iomanip>
 #include <fstream>
 #include <iterator>
 #include <map>
 
+#include "llvm/Support/raw_ostream.h"
 #include <string.h>
 
 using namespace klee;
@@ -37,8 +40,7 @@ TreeStreamWriter::TreeStreamWriter(const std::string &_path)
 
 TreeStreamWriter::~TreeStreamWriter() {
   flush();
-  if (output)
-    delete output;
+  delete output;
 }
 
 bool TreeStreamWriter::good() {
@@ -60,7 +62,6 @@ TreeOStream TreeStreamWriter::open(const TreeOStream &os) {
 }
 
 void TreeStreamWriter::write(TreeOStream &os, const char *s, unsigned size) {
-#if 1
   if (bufferCount && 
       (os.id!=lastID || size+bufferCount>bufferSize))
     flushBuffer();
@@ -74,13 +75,8 @@ void TreeStreamWriter::write(TreeOStream &os, const char *s, unsigned size) {
   } else {
     output->write(reinterpret_cast<const char*>(&os.id), 4);
     output->write(reinterpret_cast<const char*>(&size), 4);
-    output->write(buffer, size);
+    output->write(s, size);
   }
-#else
-  output->write(reinterpret_cast<const char*>(&os.id), 4);
-  output->write(reinterpret_cast<const char*>(&size), 4);
-  output->write(s, size);
-#endif
 }
 
 void TreeStreamWriter::flushBuffer() {
@@ -105,10 +101,8 @@ void TreeStreamWriter::readStream(TreeStreamID streamID,
   std::ifstream is(path.c_str(),
                    std::ios::in | std::ios::binary);
   assert(is.good());
-#if 0
-  std::cout << "finding chain for: " << streamID << "\n";
-#endif
-  
+  KLEE_DEBUG(llvm::errs() << "finding chain for: " << streamID << "\n");
+
   std::map<unsigned,unsigned> parents;
   std::vector<unsigned> roots;
   for (;;) {
@@ -137,11 +131,13 @@ void TreeStreamWriter::readStream(TreeStreamID streamID,
       while (size--) is.get();
     }
   }
-#if 0
-  std::cout << "roots: ";
-  std::copy(roots.begin(), roots.end(), std::ostream_iterator<unsigned>(std::cout, " "));
-  std::cout << "\n"; 
-#endif
+  KLEE_DEBUG({
+      llvm::errs() << "roots: ";
+      for (size_t i = 0, e = roots.size(); i < e; ++i) {
+        llvm::errs() << roots[i] << " ";
+      }
+      llvm::errs() << "\n";
+    });
   is.seekg(0, std::ios::beg);
   for (;;) {
     unsigned id;
@@ -199,3 +195,4 @@ void TreeOStream::flush() {
   assert(writer);
   writer->flush();
 }
+

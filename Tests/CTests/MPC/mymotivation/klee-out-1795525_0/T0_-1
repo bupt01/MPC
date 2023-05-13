@@ -1,0 +1,8 @@
+<PathString> 
+<readwrite>
+O0 prog2.c@57:R-T0*main_ret*pthread_create1__64005064*0-0-0
+O1 prog2.c@57:S-fork_1-0
+O3 prog2.c@58:R-T0*main_ret*pthread_create2__64005104*0-0-0
+O4 prog2.c@58:S-fork_2-0
+O14 prog2.c@129:S-join_1-0
+O15 prog2.c@130:S-join_2-0

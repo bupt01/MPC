@@ -31,9 +31,10 @@
 #include "LEGraph.h"
 #include "Fix.h"
 #include "KQueryParser.h"
+#include "JPFParser.h"
 #include<cmath> 
 //#include "AtomicityUnit.h"
-
+#include <malloc.h> 
 #include <sys/timeb.h>
 #include <sys/time.h>
 
@@ -41,8 +42,13 @@
 
 using namespace std;
 using namespace kqueryparser;
-
-
+bool checkPath(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
+			std::map<string, pair<int, string> > prefixInd); 
+void updateWriteSet(map<string, string> lastConds, vector<PathOperation> paths) ;
+bool checkAV(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
+			std::map<string, pair<int, string> > prefixInd);
+			bool checkDL(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
+			std::map<string, pair<int, string> > prefixInd);
 map<string, vector<RWOperation> > readset;              //map var id -> vector with variable's read operations
 map<string, vector<RWOperation> > writeset, writeset2;             //map var id -> vector with variable's write operations
 map<string, vector<LockPairOperation> > lockpairset;    //map object id -> vector with object's lock pair operations
@@ -63,7 +69,7 @@ map<string, int> prefix;						//map thread id -> thread's length of path prefix 
 set<int> invertId; // store the ids that should be reverted for the executions which are only used as path split (yqp)
 set<string> invertTID; // store the Tids that should be reverted for the executions which are only used as path split (yqp)
 //map<string, string> pathStr;
-std::string pathString = "";
+std::string pathString = ""; //是这种形式：T0__T1_0_T2_00_T3_0_T4_0
 string prePath;
 map<string, map<string, stack<LockPairOperation> > > lockpairStack;   //map object id -> (map thread id -> stack with incomplete locking pairs)
 int numIncLockPairs = 0;    //number of incomplete locking pairs, taking into account all objects
@@ -151,7 +157,6 @@ int minimalIndex = 0;
 void traverseAllPath(ConstModelGen *cmgen) {
 	std::vector<string> threadIDVec;
 	std::vector<int> width;
-
 	if (justCheck) {
 		std::vector<std::pair<string, int> > index;
 		for (std::map<string, int>::iterator it = prefix.begin();
@@ -259,8 +264,25 @@ void traverseAllPath(ConstModelGen *cmgen) {
             indexes.push_back(index);
         }
     }
+	//lz
+	std::vector<std::pair<string, int> > index;
+	for (map<string, vector<int> >::reverse_iterator it = threadIDToPathCond.rbegin();
+				it != threadIDToPathCond.rend(); ++it) {
+        //if (it->first == "0") continue ;	
+		
+			index.push_back(std::make_pair(it->first, it->second.size()));
+	}
+	indexes.push_back(index);
+	
+	for(auto index:indexes){
+		std::cout<<"外环"<<std::endl;
+		for(auto thTo:index){
+			std::cout<<"first:"<<thTo.first<<"second"<<thTo.second<<std::endl;
+		}
+	}
+	
 
-	if (indexes.size() == 0) {
+	if (indexes.size() ==0) {
 		struct timeval endday;
 		gettimeofday(&endday, NULL);
 		int timeuse = 1000000 * ( endday.tv_sec - startday.tv_sec ) + 
@@ -273,6 +295,138 @@ void traverseAllPath(ConstModelGen *cmgen) {
 		std::cerr << "Constraints Num: " << numConstraints << "\n";
 		std::cerr << "Vars Num: " << numVariables << "\n";*/
 	}
+	// for(auto tmpIndex=indexes.begin();tmpIndex!=indexes.end();tmpIndex++){
+	// 	for(auto threadToPath=tmpIndex->begin();threadToPath!=tmpIndex->end();threadToPath++){
+	// 		std::cout<<"thread:"<<threadToPath->first<<"path:"<<threadToPath->second;
+	// 	}
+	// }
+}
+
+void verfix(ConstModelGen *cmgen) {
+	std::cout<<"verfix*******************"<<endl;
+	vector<pair<string, int> >  currentPath;
+	for (map<string, vector<int> >::reverse_iterator it = threadIDToPathCond.rbegin();
+				it != threadIDToPathCond.rend(); ++it) {
+		currentPath.push_back(std::make_pair(it->first,it->second.size()));
+	}
+	std::reverse(currentPath.begin(), currentPath.end());
+	
+	/**verify constaintModel from basic path**/
+	//std::cout<<"formulaFile:"<<formulaFile<<std::endl;
+	string oldFormulaFile = formulaFile;//formulaFile:/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt
+	writeset2.insert(writeset.begin(), writeset.end());
+
+
+	vector<PathOperation> tmpPathSet;
+
+	std::map<string, pair<int, string> > prefixInd;
+    if (currentPath.size() != 0 && currentPath[0].first != "0") {
+            string pathIndex = "";
+            for (unsigned i=0; i<threadIDToPathCond["0"].size(); ++i) {
+                tmpPathSet.push_back(pathset[threadIDToPathCond["0"][i]].first);
+                pathIndex += pathset[threadIDToPathCond["0"][i]].second + " ";
+            }
+            prefixInd["0"] = make_pair(threadIDToPathCond["0"].size(), pathIndex);
+        }
+
+        if (currentPath.size() == 0) {
+            PathOperation p = pathset[threadIDToPathCond["0"][0]].first;
+            std::string expr = ("(Eq false "+p.getExpression()+")");
+			PathOperation* po = new PathOperation("0", "", 0, 0,  p.getFilename(), expr);
+            tmpPathSet.push_back(*po);
+        }
+
+
+		formulaFile = oldFormulaFile+util::stringValueOf(getpid());
+
+		formulaFile = formulaFile + "_" + times + "_" + "basic";//+"_"+last;
+
+		cmgen->createZ3Solver();
+
+		lastPathConds.clear();
+		lastPathConds0.clear();
+		lastIndex.clear();
+		lastIndex0.clear();
+		map<string, string > tempLastPath;
+		for (unsigned i = 0; i < currentPath.size(); ++i) {
+            string pathIndex = "";
+			vector<PathOperation> currentSet;
+			string threadID = currentPath[i].first;
+			int ind = currentPath[i].second;
+
+			for (int j = 0; j < ind; ++j) {
+			  currentSet.push_back(pathset[threadIDToPathCond[threadID][j/*+prefix[threadID]*/]].first);
+              pathIndex += pathset[threadIDToPathCond[threadID][j]].second + " ";
+            }
+            
+			int index = threadIDToPathCond[threadID][ind/*+prefix[threadID]*/];
+			if (currentSet.size() == threadIDToPathCond[threadID].size()) {
+				prefixInd[threadID] = make_pair(currentSet.size(), pathIndex);
+				tmpPathSet.insert(tmpPathSet.end(), currentSet.begin(), currentSet.end());
+                bool temp;
+				string expr = kqueryparser::translateExprToZ3(currentSet.back().getExpression(), temp);
+				// std::cout<<"origin:"<<currentSet.back().getExpression()<<std::endl;
+				// std::cout<<"expr:"<<expr<<std::endl;
+			    lastPathConds[threadID] =  expr;
+				tempLastPath[threadID] = expr;
+				continue;
+                //break;
+			}
+		}
+
+		std::cout << "\n### GENERATING CONSTRAINT MODEL11: " << "basic" << "\n";
+
+		saveUnsatCore = true;
+
+	
+		for (set<string>::iterator it = revertedID.begin();
+						it != revertedID.end(); ++it) {
+			lastPathConds0[*it] = tempLastPath[*it];
+		}
+		
+
+		updateWriteSet(lastPathConds0, tmpPathSet);
+		struct timeval startday, endday;
+		gettimeofday(&startday, NULL);
+		
+		bool checkedAV = checkAV(cmgen, tmpPathSet, prefixInd);
+		if(checkedAV){
+			std::cout<<"可以发生原子性违反"<<std::endl;
+		}
+		//bool checkedDL = checkDL(cmgen, tmpPathSet, prefixInd);
+		gettimeofday(&endday, NULL);
+		int timeuse = 1000000 * ( endday.tv_sec - startday.tv_sec ) + 
+		endday.tv_usec - startday.tv_usec; 
+		//printf("check path: %d us\n", timeuse);
+		saveUnsatCore = false;
+		cmgen->resetSolver();
+		// if (!timeout && (solutions == "2" || solutions == "3") && !success){ // check whether its an unreachable path
+		// 	if (solutions == "2")
+		// 	  checkSatisfiability(cmgen, indexes[sub], prefixInd);
+		// 	else {
+		// 	  checkSatisfiability2(cmgen, indexes[sub], prefixInd);
+        //     }
+		// }
+
+	
+
+	//** clean data structures
+	// readset.clear();
+	// writeset.clear();
+	// lockpairset.clear();
+	// startset.clear();
+	// exitset.clear();
+	// forkset.clear();
+	// joinset.clear();
+	// waitset.clear();
+	// signalset.clear();
+	// syncset.clear();
+	// pathset.clear();
+	// lockpairStack.clear();
+	// operationsByThread.clear();
+
+	//return success;
+	
 }
 
 
@@ -509,7 +663,7 @@ void parse_constraints(string symbFilePath)
                     if (pathString != "")
                         pathString += "_";
                     pathString += "T" + actualThreadID + "_" + event.substr(13);
-
+        
                 } else if(!strcmp(token,"path"))
 				{
 					pathconst = true;
@@ -573,7 +727,7 @@ void parse_constraints(string symbFilePath)
 
 						writeset[var].push_back(*op);
 						old_operationsByThread[threadId].push_back(op);
-
+                       
 					}
 					else
 					{
@@ -1147,7 +1301,18 @@ void parse_constraints(string symbFilePath)
 	  op = new SyncOperation(threadId, "", 0, prevLine + 1, filename, "exit");
 	old_operationsByThread[threadId].push_back(op);
 	exitset[threadId] = *op;
+	/****lz****/
+	// std::cout<<"path string is"<<pathString<<std::endl;
+	// std::cout<<"readset size is"<<readset.size()<<endl;
+	// for(auto it=readset.begin();it!=readset.end();it++){
+	// 	std::cout<<"it first is:"<<it->first<<std::endl;
+	// 	auto ops=it->second;
+	// 	for(auto op=ops.begin();op!=ops.end();op++){
+	// 		op->print();
+	// 	}
 
+	// }
+	// std::cout<<""<<std::endl;	
 } 
 
 /**
@@ -1216,7 +1381,7 @@ pid_t executeWithoutWait(string cmd) {
 	return childPid;
 }
 
-std::string INSTALL_PATH = getenv("INSTALL_PATH");
+std::string INSTALL_PATH ="/home";// getenv("INSTALL_PATH");
 void executeSE(std::string name, std::string sub, std::string sub1) {
 	std::string cmd = "mv " + name + " " + trace + "/index_"+ sub;
 	//std::cerr << "cmd2: " << cmd << "\n";
@@ -1309,7 +1474,7 @@ bool checkPath(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 	cout << "[Solver] Adding memory-order constraints...\n";
     memoryOrderConstraint = cmgen->addMemoryOrderConstraints_yqp(operationsByThread);
 	cmgen->z3solver.writeLineZ3(memoryOrderConstraint);
-	
+
 	cout << "[Solver] Adding read-write constraints...\n";
 	cmgen->addReadWriteConstraintsWithSimplify(readset,writeset,operationsByThread);
 
@@ -1331,6 +1496,7 @@ bool checkPath(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 	cout << "[Solver] Adding join/exit constraints...\n";
 	if (joinConstraint == "")
 		joinConstraint = cmgen->addJoinExitConstraints_yqp(joinset, exitset);
+	std::cout<<joinConstraint<<std::endl;
 	cmgen->z3solver.writeLineZ3(joinConstraint);
 
 	cout << "[Solver] Adding wait/signal constraints...\n";
@@ -1345,7 +1511,6 @@ bool checkPath(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 	numConstraints += cmgen->total;
 	numVariables += cmgen->numUnkownVars;
 	solverInvokedNum++;
-
 	if (tmpPathSet.back().getFilename().find("Property") != std::string::npos)
 		return success;
 	if(success)
@@ -1383,7 +1548,576 @@ bool checkPath(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 
 	return success;
 }
+void findWriteOpFromLine(int lineId,std::vector<RWOperation> &writeOpsSet){
+	for(auto varToOp=writeset.begin();varToOp!=writeset.end();varToOp++){
+		auto writedOps=varToOp->second;
+		for(auto writeOp=writedOps.begin();writeOp!=writedOps.end();writeOp++){
+			if(writeOp->getLine()==lineId){
+				RWOperation* pointer=&*writeOp;
+                writeOpsSet.push_back(*pointer); 
+			}
+		}
+	}
+}
+void findReadOpFromLine(int lineId,std::vector<RWOperation> &readOpsSet){
+	for(auto varToOp=readset.begin();varToOp!=readset.end();varToOp++){
+		auto readOps=varToOp->second;
+		for(auto readOp=readOps.begin();readOp!=readOps.end();readOp++){
+			if(readOp->getLine()==lineId){
+				RWOperation* pointer=&*readOp;
+                readOpsSet.push_back(*pointer); 
+			}
+		}
+	}
+}
+string getSingleRRConstraint(int locOp1,int locOp2){
+	std::vector<RWOperation> readOps1,readOps2;
+	findReadOpFromLine(locOp1,readOps1);
+	findReadOpFromLine(locOp2,readOps2);
+	string constrain="";
+	bool flag=false;
+	Z3Solver z3;
+	for(auto readOp=readOps1.begin();readOp!=readOps1.end();readOp++){	
+		string currentThreadName=(&*readOp)->getThreadId();
+		for(auto readOp1=readOps2.begin();readOp1!=readOps2.end();readOp1++){
+			if(currentThreadName==readOp1->getThreadId()){
+				string tmpConstarin=z3.cNeq(readOp->getConstraintName(),readOp1->getConstraintName());
+				if(!flag){
+					flag=true;
+					constrain=tmpConstarin;
+				}else{
+					z3.cOr(constrain,tmpConstarin);
+				}
+			}
+		}
+	}
+	return constrain;
+}
 
+string getSingleRWConstraint(int locOp1,int locOp2){
+	std::vector<RWOperation> readOps,writeOps;
+	findReadOpFromLine(locOp1,readOps);
+	findWriteOpFromLine(locOp2,writeOps);
+	string constrain="";
+	bool flag=false;
+	Z3Solver z3;
+	for(auto readOp=readOps.begin();readOp!=readOps.end();readOp++){
+		string currentThreadName=readOp->getThreadId();
+		for(auto writeOp=writeOps.begin();writeOp!=writeOps.end();writeOp++){
+			if(currentThreadName==readOp->getThreadId()){
+				string varname=readOp->getVariableName();
+				string conName1=readOp->getOrderConstraintName();
+				string conName2=writeOp->getOrderConstraintName();
+
+				for(auto wrOp=writeset[varname].begin();wrOp!=writeset[varname].end();wrOp++){
+					if(wrOp->getThreadId()!=currentThreadName){
+						std::string conName3=wrOp->getOrderConstraintName();
+            			std::string tmpConstrain=z3.cLt(conName1,conName3);
+						std::string tmpConstrain1=z3.cLt(conName3,conName2);
+						std::string orderConstrain=z3.cAnd(tmpConstrain,tmpConstrain1);
+						if(flag){
+							constrain=z3.cOr(constrain,orderConstrain);
+						}else{
+							constrain=orderConstrain;
+							flag=true;
+						}
+					}
+				}
+			}
+		}
+	}
+	return constrain;
+}
+
+string getSingleWRConstraint(int locOp1,int locOp2){
+	std::vector<RWOperation> writeOps,readOps;
+	findWriteOpFromLine(locOp1,writeOps);
+	findReadOpFromLine(locOp2,readOps);
+	Z3Solver z3;
+	bool flag=false;
+    string constrain="";
+	for(auto writeOp=writeOps.begin();writeOp!=writeOps.end();writeOp++){
+		string currentThreadName=writeOp->getThreadId();
+		for(auto readOp=readOps.begin();readOp!=readOps.end();readOp++){
+			if(currentThreadName==readOp->getThreadId()){
+				string tmpConstrain=z3.cNeq(jpfparser::translateExprToZ3(writeOp->getValue()),readOp->getConstraintName());
+				if(flag){
+					constrain=z3.cOr(constrain,tmpConstrain);
+				}else{
+					constrain=tmpConstrain;
+					flag=true;
+				}
+				
+			}
+		}
+	}
+	return constrain;
+}
+string getSingleWWConstraint(int locOp1,int locOp2){
+	std::vector<RWOperation> writeOps;
+	findWriteOpFromLine(locOp1,writeOps);
+	Z3Solver z3;
+	bool flag=false;
+    string constrain="";
+
+	for(auto writeOp=writeOps.begin();writeOp!=writeOps.end();writeOp++){
+		string currentThreadName=writeOp->getThreadId();
+		string varName=writeOp->getVariableName();
+		for(auto rdOp=readset[varName].begin();rdOp!=readset[varName].end();rdOp++){
+			if(currentThreadName!=(*rdOp).getThreadId()){
+				string tmpConstrain=z3.cEq(jpfparser::translateExprToZ3(writeOp->getValue()),rdOp->getConstraintName());
+				if(flag){
+					constrain=z3.cOr(constrain,tmpConstrain);
+				}else{
+					constrain=tmpConstrain;
+					flag=true;
+				}
+			}		
+		}
+	}
+	return constrain;
+}
+string getMultiRRConstraint(int locOp1,int locOp2){
+	std::vector<RWOperation> readOps1,readOps2;
+	findReadOpFromLine(locOp1,readOps1);
+	findReadOpFromLine(locOp2,readOps2);
+	Z3Solver z3;
+	bool flag=false;
+    string constrain="";
+
+	for(auto readOp1=readOps1.begin();readOp1!=readOps1.end();readOp1++){
+		string currentThreadName=readOp1->getThreadId();
+		string varName1=readOp1->getVariableName();
+		for(auto readOp2=readOps2.begin();readOp2!=readOps2.end();readOp2++){
+			if(currentThreadName==readOp2->getThreadId()){
+				string varName2=readOp2->getVariableName();
+
+				string conName1=readOp1->getOrderConstraintName();
+				string conName3=readOp2->getOrderConstraintName();
+
+
+				for(auto wrOp=writeset[varName1].begin();wrOp!=writeset[varName1].end();wrOp++){
+					if((&*wrOp)->getThreadId()!=currentThreadName){		
+						string conName2=wrOp->getOrderConstraintName();
+						std::string tmpConstrain=z3.cLt(conName1,conName2);
+						std::string tmpConstrain1=z3.cLt(conName2,conName3);
+						std::string orderConstrain=z3.cAnd(tmpConstrain,tmpConstrain1);
+
+						if(flag){							
+							constrain=z3.cOr(constrain,orderConstrain);
+						}else{
+							constrain=orderConstrain;
+							flag=true;
+						}
+						
+					}
+
+				}
+
+					for(auto wrOp=writeset[varName2].begin();wrOp!=writeset[varName2].end();wrOp++){
+					if((&*wrOp)->getThreadId()!=currentThreadName){		
+						string conName2=wrOp->getOrderConstraintName();
+						std::string tmpConstrain=z3.cLt(conName1,conName2);
+						std::string tmpConstrain1=z3.cLt(conName2,conName3);
+						std::string orderConstrain=z3.cAnd(tmpConstrain,tmpConstrain1);
+
+						if(flag){							
+							constrain=z3.cOr(constrain,orderConstrain);
+						}else{
+							constrain=orderConstrain;
+							flag=true;
+						}
+						
+					}
+
+				}
+				
+			}
+		}
+	}
+	return constrain;
+}
+string getTempCrossConstrain(vector<RWOperation>& opVector, RWOperation& op1, RWOperation& op2){
+	string constrain;
+	bool flag=false;
+	string conName1=op1.getOrderConstraintName();
+	string conName3=op2.getOrderConstraintName();
+	string currentThreadName=op1.getThreadId();
+    Z3Solver z3;
+	for(auto op=opVector.begin();op!=opVector.end();op++){
+		if(op->getThreadId()!=currentThreadName){
+			string conName2=(&*op)->getOrderConstraintName();
+			std::string tmpConstrain=z3.cLt(conName1,conName2);
+			std::string tmpConstrain1=z3.cLt(conName2,conName3);
+			std::string orderConstrain=z3.cAnd(tmpConstrain,tmpConstrain1);
+			if(flag){
+				constrain=z3.cOr(constrain,orderConstrain);
+			}else{
+				constrain=orderConstrain;
+			}
+
+		}
+		
+	}
+	return constrain;
+}
+string getMultiWWConstraint(int locOp1,int locOp2){
+	std::vector<RWOperation> writeOps1,writeOps2;
+	Z3Solver z3;
+	string constrain;
+	bool flag=false;
+	findWriteOpFromLine(locOp1,writeOps1);
+	findWriteOpFromLine(locOp2,writeOps2);
+	for(auto writeOp1=writeOps1.begin();writeOp1!=writeOps1.end();writeOp1++){
+		string currentThreadName=writeOp1->getThreadId();
+		string varName1=writeOp1->getVariableName();
+		for(auto writeOp2=writeOps2.begin();writeOp2!=writeOps2.end();writeOp2++){
+			if(currentThreadName==writeOp2->getThreadId()){
+				
+				string varName2=writeOp2->getVariableName();
+				string constrain1=getTempCrossConstrain(readset[varName1],*writeOp1,*writeOp2);
+				string constrain2=getTempCrossConstrain(readset[varName2],*writeOp1,*writeOp2);
+				string constrain3=getTempCrossConstrain(writeset[varName1],*writeOp1,*writeOp2);
+				string constrain4=getTempCrossConstrain(writeset[varName2],*writeOp1,*writeOp2);
+				constrain1=z3.cOr(constrain1,constrain2);
+				constrain1=z3.cOr(constrain1,constrain3);
+				constrain1=z3.cOr(constrain1,constrain4);
+                
+				if(flag){
+					constrain=z3.cOr(constrain,constrain1);
+				}else{
+					constrain=constrain1;
+					flag=true;
+				}
+
+			}
+		}
+	}
+	return constrain;
+}
+
+bool checkAV(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
+			std::map<string, pair<int, string> > prefixInd){
+	ifstream fin;
+	string symbFilePath = "/home/symbiosis-master/Tests/CTests/MPC/mymotivation/prog1";//ing
+	fin.open(symbFilePath);
+	if (!fin.good()) {
+					util::print_state(fin);
+					cerr << " -> Error opening file "<< symbFilePath <<".\n";
+					fin.close();
+					exit(1);
+	 }
+	 std::cout << ">> Extract AV From File " << symbFilePath << endl;
+	 char buf[10000];
+	 string mode;
+	 int line1,line2;
+	 fin.getline(buf, 10000);
+	 mode=buf;
+	 memset(buf,'\0',sizeof(buf));
+
+	 fin.getline(buf, 10000);
+	 line1=atoi(buf);
+	 memset(buf,'\0',sizeof(buf));
+
+	 fin.getline(buf, 10000);
+	 line2=atoi(buf);
+	 memset(buf,'\0',sizeof(buf));
+
+	 string locOp1=mode[1]=='r'?"Read":"Write";
+	 string locOp2=mode[2]=='w'?"Write":"Read";
+
+	 string atoConstarint;
+	 if(mode[0]=='M'){
+		
+		if(locOp1=="Read"&&locOp2=="Read"){
+			atoConstarint=getMultiRRConstraint(line1,line2);
+
+		}else if(locOp1=="Write"&&locOp2=="Write"){
+			atoConstarint=getMultiWWConstraint(line1,line2);
+		}
+        
+	 }else{
+		if(locOp1=="Read"&&locOp2=="Read"){
+            atoConstarint=getSingleRRConstraint(line1,line2);
+		}
+		else if(locOp1=="Read"&&locOp2=="Write"){
+			atoConstarint=getSingleRWConstraint(line1,line2);
+		}else if(locOp1=="Write"&&locOp2=="Read"){
+            atoConstarint=getSingleWRConstraint(line1,line2);
+		}else if(locOp1=="Write"&&locOp2=="Write"){
+			atoConstarint=getSingleWWConstraint(line1,line2);
+		}
+		
+	 }
+
+
+    std::cout<<"atoConstarint:"<<atoConstarint<<std::endl;
+	identifyBitVecVariables(tmpPathSet);
+
+    //tmpPathSet.insert(tmpPathSet.begin(), globalOrderConstraints.begin(), globalOrderConstraints.end());
+
+    cmgen->openOutputFile(); //** opens a new file to store the model
+
+	cout << "[Solver] Adding memory-order constraints...\n";
+    memoryOrderConstraint = cmgen->addMemoryOrderConstraints_yqp(operationsByThread);
+	cmgen->z3solver.writeLineZ3(memoryOrderConstraint);
+	cout << "[Solver] Adding read-write constraints...\n";
+	cmgen->addReadWriteConstraintsWithSimplify(readset,writeset,operationsByThread);
+
+	int tmpIndex = globalIndex;
+	cout << "[Solver] Adding path constraints1111... " << times+"_"+util::stringValueOf(tmpIndex+1) << "\n";
+	cmgen->addPathConstraints2(tmpPathSet);
+
+    cout << "[Solver] Adding locking-order constraints...\n";
+	if (lockConstraint == "")
+		lockConstraint = cmgen->addLockingConstraints_yqp2(lockpairset);
+		//cmgen->addLockingConstraints_yqp/*WithSimplify*/(lockpairset);
+	cmgen->z3solver.writeLineZ3(lockConstraint);
+	
+    cout << "[Solver] Adding fork/start constraints...\n";
+	if (forkConstraint == "")
+		forkConstraint = cmgen->addForkStartConstraints_yqp(forkset, startset);
+	cmgen->z3solver.writeLineZ3(forkConstraint);
+
+	cout << "[Solver] Adding join/exit constraints...\n";
+	if (joinConstraint == "")
+		joinConstraint = cmgen->addJoinExitConstraints_yqp(joinset, exitset);
+	cmgen->z3solver.writeLineZ3(joinConstraint);
+
+	cout << "[Solver] Adding wait/signal constraints...\n";
+	if (waitConstraint == "")
+		waitConstraint = cmgen->addWaitSignalConstraints_yqp(waitset, signalset);
+	cmgen->z3solver.writeLineZ3(waitConstraint);
+
+    cout << "[Solver] Adding AV constraints...\n";
+    cmgen->z3solver.writeLineZ3(cmgen->z3solver.writeLineZ3_yqp(cmgen->z3solver.postAssert(atoConstarint)));
+	cout << "\n### SOLVING CONSTRAINT MODEL: Z3\n";
+	double time = clock();
+	bool success = cmgen->solve_yqp();//solve_yqp();
+	solverTime += clock() - time;
+	numConstraints += cmgen->total;
+	numVariables += cmgen->numUnkownVars;
+	solverInvokedNum++;
+	if (tmpPathSet.back().getFilename().find("Property") != std::string::npos)
+		return success;
+	return success; 
+}
+struct LockToLock{
+	string lock1;
+	string lock2;
+	map<string,SyncOperation*> held;
+	SyncOperation* op1;
+    SyncOperation* op2;
+	bool operator<(const LockToLock& p) const{
+        if (this->op1 < p.op1)return true;
+        if (this->op1 > p.op1)return false;
+        if (this->op1 < p.op1)return true;
+        return false;
+    }
+};
+
+void checkCircle(int x,int y,set<string> &heldLock,set<LockToLock> **edgeInfo,
+				int lockNums,map<string,int> &nameToIndex,set<vector<LockToLock>> &circle,vector<LockToLock> &tmp,
+				set<string>& visitedThreads){
+	if(edgeInfo[x][y].size()==0){
+		return;
+	}
+	string lock1=(*(edgeInfo[x][y].begin())).lock1;
+	string lock2=(*(edgeInfo[x][y].begin())).lock2;
+	std::cout<<"持有锁："<<lock1<<"获取："<<lock2<<std::endl;
+	if(heldLock.count(lock1)!=0){
+		circle.insert(tmp);
+		std::cout<<"发现循环"<<lock2<<std::endl;
+		return;
+	}
+	for(LockToLock edge:edgeInfo[x][y]){
+		if(visitedThreads.count(edge.op1->getThreadId())>0){
+			continue;
+		}
+		heldLock.insert(lock1);
+		visitedThreads.insert(edge.op1->getThreadId());
+		std::cout<<"持有了锁："<<lock1<<"正在获取："<<lock2<<std::endl;
+		tmp.push_back(edge);
+		std::cout<<"tmp size is"<<tmp.size()<<std::endl;
+		int index=nameToIndex[lock2];
+		for(int i=0;i<lockNums;i++){
+			if(edgeInfo[index][i].size()!=0){
+				std::cout<<"开始检查："<<index<<" "<<i<<std::endl;
+				checkCircle(index,i,heldLock,edgeInfo,lockNums,nameToIndex,circle,tmp,visitedThreads);
+			}
+		}
+		tmp.pop_back();
+		visitedThreads.erase(edge.op1->getThreadId());
+	}
+	heldLock.erase(lock1);
+}
+bool getDLConstrains(ConstModelGen* cmgen, vector<vector<LockToLock*>>& circle){
+	string constrains="";
+	bool flag=false;
+	//cmgen->z3solver;
+	for(vector<LockToLock*> dl:circle){
+		int size=dl.size();
+		for(int i=0;i<size-1;i++){
+			string tmp=cmgen->z3solver.cGt(dl[i]->op2->getOrderConstraintName(),dl[i+1]->op1->getOrderConstraintName());
+			if(flag){
+               constrains=cmgen->z3solver.cAnd(constrains,tmp);
+			}else{
+				constrains=tmp;
+				flag=true;
+			}	
+		}
+		string tmp=cmgen->z3solver.cGt(dl[size-1]->op2->getOrderConstraintName(),dl[0]->op1->getOrderConstraintName());
+		constrains=flag?cmgen->z3solver.cAnd(constrains,tmp):tmp;
+	}
+	return true;
+}
+bool checkDL(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
+			std::map<string, pair<int, string> > prefixInd){
+				std:cout<<"到这里"<<std::endl;
+	set<string> locks;//存在的锁集合
+	vector<LockToLock> gle;
+	for (map<string, Schedule >::iterator it=old_operationsByThread.begin(); it!=old_operationsByThread.end(); ++it)
+	{
+		string threadId=it->first;
+		map<string,SyncOperation*> heldLock;
+		for(Schedule::iterator in = it->second.begin(); in!=it->second.end(); ++in)
+		{
+			 SyncOperation* syn= dynamic_cast<SyncOperation*>(*in);
+			 if(syn){
+				string type=syn->getType();		
+				if(type=="lock"){
+					string name=syn->getVariableName();
+					for(auto locked:heldLock){
+						LockToLock edge;
+						edge.lock1=locked.first;//已经持有的锁
+						
+						edge.lock2=name;//正在获取的锁
+						//edge->held.insert(heldLock.begin(),heldLock.end());
+						
+						edge.op1=locked.second;
+						edge.op2=syn;//当前获取锁的操作
+						gle.push_back(edge);
+					}
+				    heldLock.insert(pair<string, SyncOperation*>(name, syn));
+					locks.insert(name);
+				}else if(type=="unlock"){
+					string name=syn->getVariableName();
+					heldLock.erase(name);
+				}
+			 }
+		}
+	}
+	std::cout<<"gle size is"<<gle.size()<<std::endl;
+	set<vector<LockToLock>> circle;
+	map<string,int> nameToIndex;
+	int index=0;
+	for(string lock:locks){
+		nameToIndex.insert(pair<string,int>(lock,index++));
+	}
+	int n=locks.size();
+	set<LockToLock> **edgeInfo=new set<LockToLock>*[n];
+	for (int i = 0; i < n; i++)
+		edgeInfo[i] = new set<LockToLock>[n];
+	for(int i=0;i<n;i++){
+		for(int j=0;j<n;j++){
+			set<LockToLock> tmp;
+			edgeInfo[i][j]= tmp;
+		}
+	}
+	for(auto lockToLock:gle){
+		string lock1=lockToLock.lock1;
+		string lock2=lockToLock.lock2;
+		edgeInfo[nameToIndex[lock1]][nameToIndex[lock2]].insert(lockToLock);
+	}
+	for(int i=0;i<n;i++){
+		for(int j=0;j<n;j++){
+			if(edgeInfo[i][j].size()==0){
+				continue;
+			}
+			set<string> heldLock;
+			vector<LockToLock> tmp;
+			set<string> visitedThreads;
+			checkCircle(i,j,heldLock,edgeInfo,n,nameToIndex,circle,tmp,visitedThreads);
+		}
+	}
+	
+	std::cout<<"potential deadLock is"<<circle.size()<<std::endl;
+	for(auto dl:circle){
+		std::cout<<"死锁："<<std::endl;
+		for(auto tmp:dl){
+			std::cout<<"有了："<<tmp.lock1<<"还要："<<tmp.lock2<<std::endl;
+		}
+	}
+	//cmgen->z3solver;
+	for(auto dl:circle){
+		string constrains="";
+	    bool flag=false;
+		int size=dl.size();
+		for(int i=0;i<size-1;i++){
+			string tmp=cmgen->z3solver.cGt(dl[i].op2->getOrderConstraintName(),dl[i+1].op1->getOrderConstraintName());
+			if(flag){
+               constrains=cmgen->z3solver.cAnd(constrains,tmp);
+			}else{
+				constrains=tmp;
+				flag=true;
+			}	
+		}
+		string tmp=cmgen->z3solver.cGt(dl[size-1].op2->getOrderConstraintName(),dl[0].op1->getOrderConstraintName());
+		constrains=flag?cmgen->z3solver.cAnd(constrains,tmp):tmp;
+        std::cout<<"constrains:"<<constrains<<std::endl;
+
+		identifyBitVecVariables(tmpPathSet);
+
+    //tmpPathSet.insert(tmpPathSet.begin(), globalOrderConstraints.begin(), globalOrderConstraints.end());
+
+   		cmgen->openOutputFile(); //** opens a new file to store the model
+
+		cout << "[Solver] Adding memory-order constraints...\n";
+    	memoryOrderConstraint = cmgen->addMemoryOrderConstraints_yqp(operationsByThread);
+		cmgen->z3solver.writeLineZ3(memoryOrderConstraint);
+		cout << "[Solver] Adding read-write constraints...\n";
+		cmgen->addReadWriteConstraintsWithSimplify(readset,writeset,operationsByThread);
+
+		int tmpIndex = globalIndex;
+		cout << "[Solver] Adding path constraints1111... " << times+"_"+util::stringValueOf(tmpIndex+1) << "\n";
+		cmgen->addPathConstraints2(tmpPathSet);
+
+    	cout << "[Solver] Adding locking-order constraints...\n";
+		if (lockConstraint == "")
+			lockConstraint = cmgen->addLockingConstraints_yqp2(lockpairset);
+		//cmgen->addLockingConstraints_yqp/*WithSimplify*/(lockpairset);
+		cmgen->z3solver.writeLineZ3(lockConstraint);
+	
+   		cout << "[Solver] Adding fork/start constraints...\n";
+		if (forkConstraint == "")
+			forkConstraint = cmgen->addForkStartConstraints_yqp(forkset, startset);
+		cmgen->z3solver.writeLineZ3(forkConstraint);
+
+		cout << "[Solver] Adding join/exit constraints...\n";
+		if (joinConstraint == "")
+			joinConstraint = cmgen->addJoinExitConstraints_yqp(joinset, exitset);
+		cmgen->z3solver.writeLineZ3(joinConstraint);
+
+		cout << "[Solver] Adding wait/signal constraints...\n";
+		if (waitConstraint == "")
+			waitConstraint = cmgen->addWaitSignalConstraints_yqp(waitset, signalset);
+		cmgen->z3solver.writeLineZ3(waitConstraint);
+
+    	cout << "[Solver] Adding DL constraints...\n";
+    	cmgen->z3solver.writeLineZ3(cmgen->z3solver.writeLineZ3_yqp(cmgen->z3solver.postAssert(constrains)));
+		cout << "\n### SOLVING CONSTRAINT MODEL: Z3\n";
+		double time = clock();
+		bool success = cmgen->solve_lz();//solve_yqp();
+		solverTime += clock() - time;
+		numConstraints += cmgen->total;
+		numVariables += cmgen->numUnkownVars;
+		solverInvokedNum++;
+		if(success){
+			return true;
+		}
+	}
+	return false;
+}
 void updateWriteSet(map<string, string> lastConds, vector<PathOperation> paths) {
 
     //std::cerr << "in updateWriteSet!\n";
@@ -1765,10 +2499,10 @@ bool verifyConstraintModel2(ConstModelGen* cmgen)
 			pathset[id].first.setExpression(expr);
 		}
 	}
-
-	string oldFormulaFile = formulaFile;
+    //std::cout<<"formulaFile:"<<formulaFile<<std::endl;
+	string oldFormulaFile = formulaFile;//formulaFile:/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt
 	writeset2.insert(writeset.begin(), writeset.end());
-
+    std::cout<<"size is"<<indexes.size()<<std::endl;
 	for (int sub = 0; sub < indexes.size(); ++sub) {
 		checkID.clear();
 
@@ -1785,11 +2519,16 @@ bool verifyConstraintModel2(ConstModelGen* cmgen)
         }
 
         if (indexes[sub].size() == 0) {
-            PathOperation p = pathset[threadIDToPathCond["0"][0]].first;
-            std::string expr = ("(Eq false "+p.getExpression()+")");
-			PathOperation* po = new PathOperation("0", "", 0, 0,  p.getFilename(), expr);
-            tmpPathSet.push_back(*po);
+		    //std::cout<<"threadIDToPathCond[0]"<<threadIDToPathCond["0"][0]<<"pathset:"<<pathset.size()<<std::endl;
+           if(threadIDToPathCond["0"].size()!=0){
+				PathOperation p = pathset[threadIDToPathCond["0"][0]].first;
+            	std::string expr = ("(Eq false "+p.getExpression()+")");
+				PathOperation* po = new PathOperation("0", "", 0, 0,  p.getFilename(), expr);
+            	tmpPathSet.push_back(*po);
+		   }
+			
         }
+
 
 		formulaFile = oldFormulaFile+util::stringValueOf(getpid());
 
@@ -1819,6 +2558,8 @@ bool verifyConstraintModel2(ConstModelGen* cmgen)
 				tmpPathSet.insert(tmpPathSet.end(), currentSet.begin(), currentSet.end());
                 bool temp;
 				string expr = kqueryparser::translateExprToZ3(currentSet.back().getExpression(), temp);
+				// std::cout<<"origin:"<<currentSet.back().getExpression()<<std::endl;
+				// std::cout<<"expr:"<<expr<<std::endl;
 			    lastPathConds[threadID] =  expr;
 				tempLastPath[threadID] = expr;
 				continue;
@@ -1834,7 +2575,7 @@ bool verifyConstraintModel2(ConstModelGen* cmgen)
             expr = ("(Eq false "+expr+")");
             //if (expr.front() == ' ')
             //    expr = expr.substr(1);
-
+            //std::cout<<"expr is"<<expr<<std::endl;
 			string filename = lastOp.getFilename();
 			PathOperation* po = new PathOperation(threadID, "", 0, 0,  filename, expr);
 			currentSet.push_back(*po);
@@ -1863,7 +2604,34 @@ bool verifyConstraintModel2(ConstModelGen* cmgen)
 		updateWriteSet(lastPathConds0, tmpPathSet);
 		struct timeval startday, endday;
 		gettimeofday(&startday, NULL);
-		bool success = checkPath(cmgen, tmpPathSet, prefixInd);
+		bool success=true;
+		if(sub!= indexes.size()-1){
+			success =checkPath(cmgen, tmpPathSet, prefixInd);
+		}else{
+			  bool checkedAV = checkAV(cmgen, tmpPathSet, prefixInd);
+		      //if(checkedAV){
+			// 	std::cout<<"可以发生原子性违反"<<std::endl;
+			// }
+			// bool checkedDL = checkDL(cmgen, tmpPathSet, prefixInd);
+			// if(checkedDL){
+			// 	std::cout<<"可能有死锁"<<std::endl;
+			// }
+
+		}
+		//bool success = checkPath(cmgen, tmpPathSet, prefixInd);
+		/*
+		if(success){
+			bool checkedAV = checkAV(cmgen, tmpPathSet, prefixInd);
+		    if(checkedAV){
+				std::cout<<"可以发生原子性违反"<<std::endl;
+			}
+			//bool checkedDL = checkDL(cmgen, tmpPathSet, prefixInd);
+			//if(checkedDL){
+			//	std::cout<<"可能有死锁"<<std::endl;
+			//}
+			
+		}
+		*/
 		gettimeofday(&endday, NULL);
 		int timeuse = 1000000 * ( endday.tv_sec - startday.tv_sec ) + 
 		endday.tv_usec - startday.tv_usec; 
@@ -1879,7 +2647,6 @@ bool verifyConstraintModel2(ConstModelGen* cmgen)
 		}
 
 	}
-
 	//** clean data structures
 	readset.clear();
 	writeset.clear();
@@ -1954,6 +2721,7 @@ void writePathStr() {
     str = pathString;
 
 	std::string fileName = "CheckedPath";
+    //std::cout<<"pathString:"<<pathString<<std::endl;
 
 	fromPath = str;
 	ifstream fin;
@@ -1964,7 +2732,6 @@ void writePathStr() {
 		writeReadStr(str, fileName);
 		return ;
 	}
-
 	char buf[10000];
 	string ss;
 	while (!fin.eof()) {
@@ -1998,7 +2765,7 @@ void generateConstraintModel2()
 	//cmgen->createZ3Solver();
 
 	//** find symbolic trace files and populate map symTracesByThread
-	DIR* dirFile = opendir(symbFolderPath2.c_str());
+	DIR* dirFile = opendir(symbFolderPath2.c_str());//该文件夹为klee的测试结果输出文件夹：klee-out-number
 	if ( dirFile ) {
 		struct dirent* hFile;
 		while (( hFile = readdir( dirFile )) != NULL ) {
@@ -2148,13 +2915,14 @@ void generateConstraintModel2()
 			string tid = keys[i];
 			parse_constraints(symTracesByThread[tid][traceCounterByThread[i]]);
 		}
+		
 
-		writePathStr();
-
+		writePathStr();//记录已经探索过的轨迹
+		//verfix(cmgen);
 		traverseAllPath(cmgen);
-
 		//debug: print constraints
-		if(debug)
+		//if(debug)
+		if(true)
 		{
 			cout<< "\n-- READ SET\n";
 			for(map< string, vector<RWOperation> >::iterator out = readset.begin(); out != readset.end(); ++out)
@@ -2225,6 +2993,7 @@ void generateConstraintModel2()
 			cout<< "\n-- EXIT SET\n";
 			for (map<string, SyncOperation>::iterator it=exitset.begin(); it!=exitset.end(); ++it)
 			{
+				std::cout<<it->first<<std::endl;
 				it->second.print();
 			}
 
@@ -2645,7 +3414,7 @@ int main(int argc, char *const* argv)
 	map<EventPair, vector<string> > altSchedules; //set used to store the event pairs that yield a sat non-failing alternative schedule
 	vector<string> solution ;
 	if(!bugFixMode)
-	{
+	{   
 		generateConstraintModel2(); // 3 for incremental
 	} else {
 

@@ -11,11 +11,11 @@
 #define KLEE_KINSTRUCTION_H
 
 #include "klee/Config/Version.h"
-#if LLVM_VERSION_CODE < LLVM_VERSION(2, 9)
-#include "llvm/System/DataTypes.h"
-#else
+#include "klee/Internal/Module/InstructionInfoTable.h"
+
 #include "llvm/Support/DataTypes.h"
-#endif
+#include "llvm/Support/raw_ostream.h"
+
 #include <vector>
 
 namespace llvm {
@@ -43,7 +43,9 @@ namespace klee {
     unsigned dest;
 
   public:
-    virtual ~KInstruction(); 
+    virtual ~KInstruction();
+    std::string getSourceLocation() const;
+
   };
 
   struct KGEPInstruction : KInstruction {
@@ -54,10 +56,9 @@ namespace klee {
     std::vector< std::pair<unsigned, uint64_t> > indices;
 
     /// offset - A constant offset to add to the pointer operand to execute the
-    /// insturction.
+    /// instruction.
     uint64_t offset;
   };
 }
 
-#endif
-
+#endif /* KLEE_KINSTRUCTION_H */

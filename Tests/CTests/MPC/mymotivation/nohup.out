@@ -1,0 +1,111 @@
+KLEE: ERROR: cannot create "/home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-out-3140709_0": File exists
+KLEE: ERROR: cannot create "/home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-out-3140709_0": File exists
+KLEE: output directory = " 3219578_0 3214586_92"
+KLEE: output directory is "/home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-out-3219578_0"
+KLEE: Using STP solver backend
+KLEE: WARNING: undefined reference to function: pthread_create
+KLEE: WARNING: undefined reference to function: pthread_join
+KLEE: WARNING: undefined reference to function: pthread_mutex_lock
+KLEE: WARNING: undefined reference to function: pthread_mutex_unlock
+replayOutDir:ktest file
+seeds'size is :0
+filename:index_3219578_0
+>> Read Order File: index_3219578_0
+path isklee-out-3219578_0/prefix
+thred deal
+thred deal
+thred deal
+thred deal
+thred deal
+thred deal
+[4] terminateStateOnExit ----- 
+[4_-1] terminateStateCLAPWithConstraints
+Thread 4 0x3c4fb00 terminated. Flush Constraint Trace
+Elapsed Time: 1110s
+------------------
+[5] terminateStateOnExit ----- 
+[5_-1] terminateStateCLAPWithConstraints
+Thread 5 0x3c52600 terminated. Flush Constraint Trace
+Elapsed Time: 1207s
+------------------
+[6] terminateStateOnExit ----- 
+[6_-1] terminateStateCLAPWithConstraints
+Thread 6 0x3c52f00 terminated. Flush Constraint Trace
+Elapsed Time: 1295s
+------------------
+[3] terminateStateOnExit ----- 
+[3_-1] terminateStateCLAPWithConstraints
+Thread 3 0x3c4ef00 terminated. Flush Constraint Trace
+Elapsed Time: 1384s
+------------------
+[1] terminateStateOnExit ----- 
+[1_-1] terminateStateCLAPWithConstraints
+Thread 1 0x3bb5b00 terminated. Flush Constraint Trace
+Elapsed Time: 1472s
+------------------
+[0] terminateStateOnExit ----- 
+[0_-1] terminateStateCLAPWithConstraints
+Thread 0 0x3bb4c00 terminated. Flush Constraint Trace
+Elapsed Time: 1688s
+------------------
+[2] terminateStateOnExit ----- 
+[2_-1] terminateStateCLAPWithConstraints
+Thread 2 0x3c4e600 terminated. Flush Constraint Trace
+Elapsed Time: 1817s
+------------------
+
+KLEE: done: total instructions = 128
+KLEE: done: completed paths = 7
+KLEE: done: generated tests = 7
+cmd01:time /home/symbiosis-master/SymbiosisSolver/symbiosisSolver --trace-folder=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-last --model=/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt --solution=/home/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt --with-solver=/home/z3-z3-4.8.8/build/z3 --parallel=0 --times=3219595 --last=3219578_0 --solutions=1 --trace=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/  --bcfile=M3.bc
+# MODE: FIND BUG-TRIGGERING SCHEDULE
+# CONTEXT SWITCH REDUCTION: off
+# DSP:		(options = extended, short, "")
+# SYMBOLIC TRACES: /home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-last
+# SOLVER: /home/z3-z3-4.8.8/build/z3
+# CONSTRAINT MODEL: /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt
+# SOLUTION: /home/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt
+
+[Solver] Init solver... /home/z3-z3-4.8.8/build/z3 -T:30 -smt2 -in 
+[Solver] create Z3 pid 3219599
+>> Extract Path Prefix From File /home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-out-3219578_0/prefix
+
+---- ATTEMPT 0 7
+>> Parsing T0_-1
+>> Parsing T1_-1
+>> Parsing T2_-1
+>> Parsing T3_-1
+>> Parsing T4_-1
+>> Parsing T5_-1
+>> Parsing T6_-1
+ redundant str: T0__T1_0_T2_0110_T3_0_T4_1_T5_1_T6_1 T0__T1_0_T2_010_T3_0_T4_1_T5_1_T6_1
+MaxNum: 1
+
+### GENERATING CONSTRAINT MODEL11: 0
+Opening file: /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt3219598_3219595_0
+[Solver] Adding memory-order constraints...
+[Solver] Adding read-write constraints...
+[Solver] Adding path constraints1111... 3219595_1
+[Solver] Adding locking-order constraints...
+[Solver] Adding fork/start constraints...
+[Solver] Adding join/exit constraints...
+[Solver] Adding wait/signal constraints...
+
+### SOLVING CONSTRAINT MODEL: Z3
+   TYPE	| #CONSTRAINTS
+--------------------------
+Memory	|	65	(0.140086%)
+ReadWrite	|	380	(0.818966%)
+Locking	|	4	(0.00862069%)
+PartialOrd	|	6	(0.012931%)
+Path		|	9	(0.0193966%)
+
+>> #CONSTRAINTS: 464
+>> #UNKNOWN VARS: 87
+
+[Solver] Model Satisfiability: unsat
+[Solver] (error "line 419 column 10: model is not available")
+>> Killing Z3 pid 3219599 and 3219600
+0.02user 0.01system 0:00.03elapsed 100%CPU (0avgtext+0avgdata 17924maxresident)k
+0inputs+128outputs (0major+2332minor)pagefaults 0swaps
+dirFile/home/symbiosis-master/SymbiosisSolver/tmp/time /home/symbiosis-master/SymbiosisSolver/symbiosisSolver --trace-folder=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-last --model=/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt --solution=/home/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt --with-solver=/home/z3-z3-4.8.8/build/z3 --parallel=0 --times=3219595 --last=3219578_0 --solutions=1 --trace=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/  --bcfile=M3.bc

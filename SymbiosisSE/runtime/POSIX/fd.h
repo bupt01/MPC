@@ -7,17 +7,37 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __EXE_FD__
-#define __EXE_FD__
+#ifndef KLEE_FD_H
+#define KLEE_FD_H
+
+#include "klee/Config/config.h"
 
 #ifndef _LARGEFILE64_SOURCE
 #error "_LARGEFILE64_SOURCE should be defined"
 #endif
-#include <sys/types.h>
-#include <sys/statfs.h>
-#include <dirent.h>
 
-typedef struct {  
+#include <dirent.h>
+#include <sys/types.h>
+
+#ifdef HAVE_SYSSTATFS_H
+#include <sys/statfs.h>
+#endif
+
+#ifdef __APPLE__
+#include <sys/dtrace.h>
+#endif
+#ifdef __FreeBSD__
+#include "FreeBSD.h"
+#endif
+#if defined(__APPLE__) || defined(__FreeBSD__)
+#include <sys/mount.h>
+#include <sys/param.h>
+#if !defined(dirent64)
+#define dirent64 dirent
+#endif
+#endif
+
+typedef struct {
   unsigned size;  /* in bytes */
   char* contents;
   struct stat64* stat;
@@ -71,14 +91,15 @@ typedef struct {
 extern exe_file_system_t __exe_fs;
 extern exe_sym_env_t __exe_env;
 
-void klee_init_fds(unsigned n_files, unsigned file_length, 
-		   int sym_stdout_flag, int do_all_writes_flag, 
-		   unsigned max_failures);
+void klee_init_fds(unsigned n_files, unsigned file_length,
+                   unsigned stdin_length, int sym_stdout_flag,
+                   int do_all_writes_flag, unsigned max_failures);
 void klee_init_env(int *argcPtr, char ***argvPtr);
 
 /* *** */
 
 int __fd_open(const char *pathname, int flags, mode_t mode);
+int __fd_openat(int basefd, const char *pathname, int flags, mode_t mode);
 off64_t __fd_lseek(int fd, off64_t offset, int whence);
 int __fd_stat(const char *path, struct stat64 *buf);
 int __fd_lstat(const char *path, struct stat64 *buf);
@@ -87,4 +108,4 @@ int __fd_ftruncate(int fd, off64_t length);
 int __fd_statfs(const char *path, struct statfs *buf);
 int __fd_getdents(unsigned int fd, struct dirent64 *dirp, unsigned int count);
 
-#endif /* __EXE_FD__ */
+#endif /* KLEE_FD_H */

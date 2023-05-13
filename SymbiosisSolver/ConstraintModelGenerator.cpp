@@ -179,8 +179,9 @@ string ConstModelGen::addMemoryOrderConstraints_yqp(map<string, vector<Operation
             {
 				std::string name = (*opit)->getOrderConstraintName();
                 string declareVar = z3solver.declareIntOrderVarAndStore((*opit)->getOrderConstraintName(), 0, intMax);
+
                 retStr += z3solver.writeLineZ3_yqp(declareVar);
-                
+
                 conststr.append(" "+(*opit)->getOrderConstraintName());
                 distinct.append(" "+(*opit)->getOrderConstraintName());
             }
@@ -1158,7 +1159,7 @@ void ConstModelGen::addForkStartConstraints(map<string, vector<SyncOperation> > 
 string ConstModelGen::addJoinExitConstraints_yqp(std::map<string, vector<SyncOperation> > joinset, map<string, SyncOperation> exitset)
 {
     map<string, string> tidMap;
-    tidMap["107"] = "1", tidMap["108"] = "2";
+    //tidMap["3"] = "1", tidMap["4"] = "2",tidMap["5"] = "3"; 
 	string retStr = "";
     retStr += z3solver.writeLineZ3_yqp("(echo \"JOIN-EXIT CONSTRAINTS -----\")\n");
     int labelCounter = 0;
@@ -1166,12 +1167,13 @@ string ConstModelGen::addJoinExitConstraints_yqp(std::map<string, vector<SyncOpe
     {
         string constraint;
         vector<SyncOperation> tmpvec = it->second;
+        std::cout<<"num is"<<tmpvec.size()<<std::endl;
         for(vector<SyncOperation>::iterator in = tmpvec.begin(); in!=tmpvec.end(); ++in)
         {
             SyncOperation parent = *in;
-            string childTid = tidMap[parent.getVariableName()]; //get the joined thread id
+            // lz string childTid = tidMap[parent.getVariableName()]; //get the joined thread id
+            string childTid = parent.getVariableName(); //get the joined thread id
             SyncOperation child = exitset[childTid];
-           
             //account for possible missing thread traces
             if(child.getOrderConstraintName() == "OS--@0" ||
 						child.getOrderConstraintName() == "OS--&@0"){
@@ -1179,7 +1181,6 @@ string ConstModelGen::addJoinExitConstraints_yqp(std::map<string, vector<SyncOpe
             }
             
             constraint = z3solver.cGt(parent.getOrderConstraintName(),child.getOrderConstraintName()); //const: join-parent > exit-child
-            
             string label = "JEC"+util::stringValueOf(labelCounter); //** label to uniquely identify this constraint
             labelCounter++;
             numPO++; //increase number of partial-order constraints
@@ -1411,6 +1412,19 @@ bool ConstModelGen::solve_yqp(){
     return z3solver.solve_yqp();
 }
 
+bool ConstModelGen::solve_lz(){
+    total = numMO + numLO + numPC + numPO + numRW;
+    cout << "   TYPE\t| #CONSTRAINTS\n";
+    cout << "--------------------------\n";
+    cout << "Memory\t|\t" << numMO << "\t("<< (numMO/total)<<"%)\n";
+    cout << "ReadWrite\t|\t" << numRW << "\t("<< (numRW/total)<<"%)\n";
+    cout << "Locking\t|\t" << numLO << "\t("<< (numLO/total)<<"%)\n";
+    cout << "PartialOrd\t|\t" << numPO << "\t("<< (numPO/total)<<"%)\n";
+    cout << "Path\t\t|\t" << numPC << "\t("<< (numPC/total)<<"%)\n";
+    cout << "\n>> #CONSTRAINTS: " << total << "\n";
+    cout << ">> #UNKNOWN VARS: " << numUnkownVars << "\n\n";
+    return z3solver.solve_lz();
+}
 
 bool ConstModelGen::solve(){
     total = numMO + numLO + numPC + numPO + numRW;

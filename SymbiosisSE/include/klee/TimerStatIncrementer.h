@@ -14,19 +14,24 @@
 #include "klee/Internal/Support/Timer.h"
 
 namespace klee {
+
+  /**
+   * A TimerStatIncrementer adds its lifetime to a specified Statistic.
+   */
   class TimerStatIncrementer {
   private:
-    WallTimer timer;
+    const WallTimer timer;
     Statistic &statistic;
 
   public:
-    TimerStatIncrementer(Statistic &_statistic) : statistic(_statistic) {}
+    explicit TimerStatIncrementer(Statistic &statistic) : statistic(statistic) {}
     ~TimerStatIncrementer() {
-      statistic += timer.check(); 
+      // record microseconds
+      statistic += timer.delta().toMicroseconds();
     }
 
-    uint64_t check() { return timer.check(); }
+    time::Span delta() const { return timer.delta(); }
   };
 }
 
-#endif
+#endif /* KLEE_TIMERSTATINCREMENTER_H */

@@ -1,12 +1,13 @@
-// RUN: %llvmgcc %s -emit-llvm -O0 -c -o %t1.bc
-// RUN: %klee %t1.bc
+// RUN: %clang %s -emit-llvm %O0opt -c -o %t1.bc
+// RUN: rm -rf %t.klee-out
+// RUN: %klee --output-dir=%t.klee-out %t1.bc
 
 #include <assert.h>
 
 int main() {
   int d;
   
-  klee_make_symbolic( &d, sizeof(d) );
+  klee_make_symbolic(&d, sizeof(d), "d");
 
   int l = d - 1;
   unsigned long long m = ((unsigned long long) l << 32) / d;

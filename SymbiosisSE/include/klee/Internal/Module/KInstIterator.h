@@ -10,8 +10,6 @@
 #ifndef KLEE_KINSTITERATOR_H
 #define KLEE_KINSTITERATOR_H
 
-#include <iostream>
-
 namespace klee {
   struct KInstruction;
 
@@ -21,13 +19,6 @@ namespace klee {
   public:
     KInstIterator() : it(0) {}
     KInstIterator(KInstruction **_it) : it(_it) {}
-    KInstIterator(const KInstIterator &b) : it(b.it) {}
-    ~KInstIterator() {}
-
-    KInstIterator &operator=(const KInstIterator &b) {
-      it = b.it;
-      return *this;
-    }
 
     bool operator==(const KInstIterator &b) const {
       return it==b.it;
@@ -48,4 +39,4 @@ namespace klee {
   };
 } // End klee namespace
 
-#endif
+#endif /* KLEE_KINSTITERATOR_H */

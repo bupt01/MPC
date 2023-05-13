@@ -10,59 +10,79 @@
 #include "ExternalDispatcher.h"
 #include "klee/Config/Version.h"
 
-// Ugh.
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-
-#include "llvm/Module.h"
-#include "llvm/Constants.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/Instructions.h"
-#if LLVM_VERSION_CODE < LLVM_VERSION(2, 7)
-#include "llvm/ModuleProvider.h"
-#endif
-#if LLVM_VERSION_CODE >= LLVM_VERSION(2, 7)
-#include "llvm/LLVMContext.h"
-#endif
-#include "llvm/ExecutionEngine/JIT.h"
+#include "llvm/IR/CallSite.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
-#include "llvm/Support/CallSite.h"
-#if LLVM_VERSION_CODE < LLVM_VERSION(2, 9)
-#include "llvm/System/DynamicLibrary.h"
-#else
+#include "llvm/ExecutionEngine/MCJIT.h"
 #include "llvm/Support/DynamicLibrary.h"
-#endif
 #include "llvm/Support/raw_ostream.h"
-#if LLVM_VERSION_CODE < LLVM_VERSION(3, 0)
-#include "llvm/Target/TargetSelect.h"
-#else
 #include "llvm/Support/TargetSelect.h"
-#endif
-#include <setjmp.h>
-#include <signal.h>
-#include <iostream>
+
+#include <csetjmp>
+#include <csignal>
 
 using namespace llvm;
 using namespace klee;
 
 /***/
 
-static jmp_buf escapeCallJmpBuf;
+static sigjmp_buf escapeCallJmpBuf;
 
 extern "C" {
 
 static void sigsegv_handler(int signal, siginfo_t *info, void *context) {
-    longjmp(escapeCallJmpBuf, 1);
+  siglongjmp(escapeCallJmpBuf, 1);
+}
 }
 
+namespace klee {
+
+class ExternalDispatcherImpl {
+private:
+  typedef std::map<const llvm::Instruction *, llvm::Function *> dispatchers_ty;
+  dispatchers_ty dispatchers;
+  llvm::Function *createDispatcher(llvm::Function *f, llvm::Instruction *i,
+                                   llvm::Module *module);
+  llvm::ExecutionEngine *executionEngine;
+  LLVMContext &ctx;
+  std::map<std::string, void *> preboundFunctions;
+  bool runProtectedCall(llvm::Function *f, uint64_t *args);
+  llvm::Module *singleDispatchModule;
+  std::vector<std::string> moduleIDs;
+  std::string &getFreshModuleID();
+  int lastErrno;
+
+public:
+  ExternalDispatcherImpl(llvm::LLVMContext &ctx);
+  ~ExternalDispatcherImpl();
+  bool executeCall(llvm::Function *function, llvm::Instruction *i,
+                   uint64_t *args);
+  void *resolveSymbol(const std::string &name);
+  int getLastErrno();
+  void setLastErrno(int newErrno);
+};
+
+std::string &ExternalDispatcherImpl::getFreshModuleID() {
+  // We store the module IDs because `llvm::Module` constructor takes the
+  // module ID as a StringRef so it doesn't own the ID.  Therefore we need to
+  // own the ID.
+  static uint64_t counter = 0;
+  std::string underlyingString;
+  llvm::raw_string_ostream ss(underlyingString);
+  ss << "ExternalDispatcherModule_" << counter;
+  moduleIDs.push_back(ss.str()); // moduleIDs now has a copy
+  ++counter;                     // Increment for next call
+  return moduleIDs.back();
 }
 
-void *ExternalDispatcher::resolveSymbol(const std::string &name) {
+void *ExternalDispatcherImpl::resolveSymbol(const std::string &name) {
   assert(executionEngine);
-  
+
   const char *str = name.c_str();
 
   // We use this to validate that function names can be resolved so we
@@ -76,10 +96,10 @@ void *ExternalDispatcher::resolveSymbol(const std::string &name) {
   void *addr = sys::DynamicLibrary::SearchForAddressOfSymbol(str);
   if (addr)
     return addr;
-  
+
   // If it has an asm specifier and starts with an underscore we retry
   // without the underscore. I (DWD) don't know why.
-  if (name[0] == 1 && str[0]=='_') { 
+  if (name[0] == 1 && str[0] == '_') {
     ++str;
     addr = sys::DynamicLibrary::SearchForAddressOfSymbol(str);
   }
@@ -87,26 +107,30 @@ void *ExternalDispatcher::resolveSymbol(const std::string &name) {
   return addr;
 }
 
-ExternalDispatcher::ExternalDispatcher() {
-  dispatchModule = new Module("ExternalDispatcher", getGlobalContext());
-#if LLVM_VERSION_CODE < LLVM_VERSION(2, 7)
-  ExistingModuleProvider* MP = new ExistingModuleProvider(dispatchModule);
-#endif
-
+ExternalDispatcherImpl::ExternalDispatcherImpl(LLVMContext &ctx)
+    : ctx(ctx), lastErrno(0) {
   std::string error;
-#if LLVM_VERSION_CODE < LLVM_VERSION(2, 7)
-  executionEngine = ExecutionEngine::createJIT(MP, &error);
-#else
-  executionEngine = ExecutionEngine::createJIT(dispatchModule, &error);
-#endif
+  singleDispatchModule = new Module(getFreshModuleID(), ctx);
+  // The MCJIT JITs whole modules at a time rather than individual functions
+  // so we will let it manage the modules.
+  // Note that we don't do anything with `singleDispatchModule`. This is just
+  // so we can use the EngineBuilder API.
+  auto dispatchModuleUniq = std::unique_ptr<Module>(singleDispatchModule);
+  executionEngine = EngineBuilder(std::move(dispatchModuleUniq))
+                        .setErrorStr(&error)
+                        .setEngineKind(EngineKind::JIT)
+                        .create();
+
   if (!executionEngine) {
-    std::cerr << "unable to make jit: " << error << "\n";
+    llvm::errs() << "unable to make jit: " << error << "\n";
     abort();
   }
 
   // If we have a native target, initialize it to ensure it is linked in and
   // usable by the JIT.
   llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmParser();
+  llvm::InitializeNativeTargetAsmPrinter();
 
   // from ExecutionEngine::create
   if (executionEngine) {
@@ -116,171 +140,214 @@ ExternalDispatcher::ExternalDispatcher() {
   }
 
 #ifdef WINDOWS
-  preboundFunctions["getpid"] = (void*) (long) getpid;
-  preboundFunctions["putchar"] = (void*) (long) putchar;
-  preboundFunctions["printf"] = (void*) (long) printf;
-  preboundFunctions["fprintf"] = (void*) (long) fprintf;
-  preboundFunctions["sprintf"] = (void*) (long) sprintf;
+  preboundFunctions["getpid"] = (void *)(long)getpid;
+  preboundFunctions["putchar"] = (void *)(long)putchar;
+  preboundFunctions["printf"] = (void *)(long)printf;
+  preboundFunctions["fprintf"] = (void *)(long)fprintf;
+  preboundFunctions["sprintf"] = (void *)(long)sprintf;
 #endif
 }
 
-ExternalDispatcher::~ExternalDispatcher() {
+ExternalDispatcherImpl::~ExternalDispatcherImpl() {
   delete executionEngine;
+  // NOTE: the `executionEngine` owns all modules so
+  // we don't need to delete any of them.
 }
 
-bool ExternalDispatcher::executeCall(Function *f, Instruction *i, uint64_t *args) {
+bool ExternalDispatcherImpl::executeCall(Function *f, Instruction *i,
+                                         uint64_t *args) {
   dispatchers_ty::iterator it = dispatchers.find(i);
-  Function *dispatcher;
-
-  if (it == dispatchers.end()) {
-#ifdef WINDOWS
-    std::map<std::string, void*>::iterator it2 = 
-      preboundFunctions.find(f->getName()));
-
-    if (it2 != preboundFunctions.end()) {
-      // only bind once
-      if (it2->second) {
-        executionEngine->addGlobalMapping(f, it2->second);
-        it2->second = 0;
-      }
-    }
-#endif
-
-    dispatcher = createDispatcher(f,i);
-
-	//std::cerr << "dispatcher add\n";
-	//dispatcher->dump();
-    dispatchers.insert(std::make_pair(i, dispatcher));
-
-    if (dispatcher) {
-      // Force the JIT execution engine to go ahead and build the function. This
-      // ensures that any errors or assertions in the compilation process will
-      // trigger crashes instead of being caught as aborts in the external
-      // function.
-      executionEngine->recompileAndRelinkFunction(dispatcher);
-    }
-  } else {
-    dispatcher = it->second;
+  if (it != dispatchers.end()) {
+    // Code already JIT'ed for this
+    return runProtectedCall(it->second, args);
   }
 
-  //std::cerr << "dispatcher: " << dispatcher << "\n";
+  // Code for this not JIT'ed. Do this now.
+  Function *dispatcher;
+#ifdef WINDOWS
+  std::map<std::string, void *>::iterator it2 =
+      preboundFunctions.find(f->getName());
+
+  if (it2 != preboundFunctions.end()) {
+    // only bind once
+    if (it2->second) {
+      executionEngine->addGlobalMapping(f, it2->second);
+      it2->second = 0;
+    }
+  }
+#endif
+
+  Module *dispatchModule = NULL;
+  // The MCJIT generates whole modules at a time so for every call that we
+  // haven't made before we need to create a new Module.
+  dispatchModule = new Module(getFreshModuleID(), ctx);
+  dispatcher = createDispatcher(f, i, dispatchModule);
+  dispatchers.insert(std::make_pair(i, dispatcher));
+
+  // Force the JIT execution engine to go ahead and build the function. This
+  // ensures that any errors or assertions in the compilation process will
+  // trigger crashes instead of being caught as aborts in the external
+  // function.
+  if (dispatcher) {
+    // The dispatchModule is now ready so tell MCJIT to generate the code for
+    // it.
+    auto dispatchModuleUniq = std::unique_ptr<Module>(dispatchModule);
+    executionEngine->addModule(
+        std::move(dispatchModuleUniq)); // MCJIT takes ownership
+    // Force code generation
+    uint64_t fnAddr =
+        executionEngine->getFunctionAddress(dispatcher->getName());
+    executionEngine->finalizeObject();
+    assert(fnAddr && "failed to get function address");
+    (void)fnAddr;
+  } else {
+    // MCJIT didn't take ownership of the module so delete it.
+    delete dispatchModule;
+  }
   return runProtectedCall(dispatcher, args);
 }
 
 // FIXME: This is not reentrant.
 static uint64_t *gTheArgsP;
-
-bool ExternalDispatcher::runProtectedCall(Function *f, uint64_t *args) {
+bool ExternalDispatcherImpl::runProtectedCall(Function *f, uint64_t *args) {
   struct sigaction segvAction, segvActionOld;
   bool res;
-  
+
   if (!f)
     return false;
 
   std::vector<GenericValue> gvArgs;
   gTheArgsP = args;
 
-  segvAction.sa_handler = 0;
-  memset(&segvAction.sa_mask, 0, sizeof(segvAction.sa_mask));
+  segvAction.sa_handler = nullptr;
+  sigemptyset(&(segvAction.sa_mask));
+  sigaddset(&(segvAction.sa_mask), SIGSEGV);
   segvAction.sa_flags = SA_SIGINFO;
   segvAction.sa_sigaction = ::sigsegv_handler;
   sigaction(SIGSEGV, &segvAction, &segvActionOld);
 
-  if (setjmp(escapeCallJmpBuf)) {
+  if (sigsetjmp(escapeCallJmpBuf, 1)) {
     res = false;
   } else {
+    errno = lastErrno;
     executionEngine->runFunction(f, gvArgs);
+    // Explicitly acquire errno information
+    lastErrno = errno;
     res = true;
   }
-  sigaction(SIGSEGV, &segvActionOld, 0);
+
+  sigaction(SIGSEGV, &segvActionOld, nullptr);
   return res;
 }
 
+// FIXME: This might have been relevant for the old JIT but the MCJIT
+// has a completly different implementation so this comment below is
+// likely irrelevant and misleading.
+//
 // For performance purposes we construct the stub in such a way that the
 // arguments pointer is passed through the static global variable gTheArgsP in
 // this file. This is done so that the stub function prototype trivially matches
 // the special cases that the JIT knows how to directly call. If this is not
 // done, then the jit will end up generating a nullary stub just to call our
 // stub, for every single function call.
-Function *ExternalDispatcher::createDispatcher(Function *target, Instruction *inst) {
+Function *ExternalDispatcherImpl::createDispatcher(Function *target,
+                                                   Instruction *inst,
+                                                   Module *module) {
   if (!resolveSymbol(target->getName()))
     return 0;
 
   CallSite cs;
-  if (inst->getOpcode()==Instruction::Call) {
+  if (inst->getOpcode() == Instruction::Call) {
     cs = CallSite(cast<CallInst>(inst));
   } else {
     cs = CallSite(cast<InvokeInst>(inst));
   }
 
-  Value **args = new Value*[cs.arg_size()];
+  Value **args = new Value *[cs.arg_size()];
 
-  std::vector<LLVM_TYPE_Q Type*> nullary;
-  
-  Function *dispatcher = Function::Create(FunctionType::get(Type::getVoidTy(getGlobalContext()), 
-							    nullary, false),
-					  GlobalVariable::ExternalLinkage, 
-					  "",
-					  dispatchModule);
+  std::vector<Type *> nullary;
 
+  // MCJIT functions need unique names, or wrong function can be called.
+  // The module identifier is included because for the MCJIT we need
+  // unique function names across all `llvm::Modules`s.
+  std::string fnName =
+      "dispatcher_" + target->getName().str() + module->getModuleIdentifier();
+  Function *dispatcher =
+      Function::Create(FunctionType::get(Type::getVoidTy(ctx), nullary, false),
+                       GlobalVariable::ExternalLinkage, fnName, module);
 
-  BasicBlock *dBB = BasicBlock::Create(getGlobalContext(), "entry", dispatcher);
+  BasicBlock *dBB = BasicBlock::Create(ctx, "entry", dispatcher);
 
+  llvm::IRBuilder<> Builder(dBB);
   // Get a Value* for &gTheArgsP, as an i64**.
-  Instruction *argI64sp = 
-    new IntToPtrInst(ConstantInt::get(Type::getInt64Ty(getGlobalContext()), 
-                                      (uintptr_t) (void*) &gTheArgsP),
-                     PointerType::getUnqual(PointerType::getUnqual(Type::getInt64Ty(getGlobalContext()))),
-                     "argsp", dBB);
-  Instruction *argI64s = new LoadInst(argI64sp, "args", dBB); 
-  
+  auto argI64sp = Builder.CreateIntToPtr(
+      ConstantInt::get(Type::getInt64Ty(ctx), (uintptr_t)(void *)&gTheArgsP),
+      PointerType::getUnqual(PointerType::getUnqual(Type::getInt64Ty(ctx))),
+      "argsp");
+  auto argI64s = Builder.CreateLoad(argI64sp, "args");
+
   // Get the target function type.
-  LLVM_TYPE_Q FunctionType *FTy =
-    cast<FunctionType>(cast<PointerType>(target->getType())->getElementType());
+  FunctionType *FTy = cast<FunctionType>(
+      cast<PointerType>(target->getType())->getElementType());
 
   // Each argument will be passed by writing it into gTheArgsP[i].
   unsigned i = 0, idx = 2;
-  for (CallSite::arg_iterator ai = cs.arg_begin(), ae = cs.arg_end();
-       ai!=ae; ++ai, ++i) {
-    // Determine the type the argument will be passed as. This accomodates for
+  for (CallSite::arg_iterator ai = cs.arg_begin(), ae = cs.arg_end(); ai != ae;
+       ++ai, ++i) {
+    // Determine the type the argument will be passed as. This accommodates for
     // the corresponding code in Executor.cpp for handling calls to bitcasted
     // functions.
-    LLVM_TYPE_Q Type *argTy = (i < FTy->getNumParams() ? FTy->getParamType(i) : 
-                               (*ai)->getType());
-    Instruction *argI64p = 
-      GetElementPtrInst::Create(argI64s, 
-                                ConstantInt::get(Type::getInt32Ty(getGlobalContext()), 
-                                                 idx), 
-                                "", dBB);
+    auto argTy =
+        (i < FTy->getNumParams() ? FTy->getParamType(i) : (*ai)->getType());
+    auto argI64p =
+        Builder.CreateGEP(nullptr, argI64s,
+                          ConstantInt::get(Type::getInt32Ty(ctx), idx));
 
-    Instruction *argp = new BitCastInst(argI64p, PointerType::getUnqual(argTy),
-                                        "", dBB);
-    args[i] = new LoadInst(argp, "", dBB);
+    auto argp = Builder.CreateBitCast(argI64p, PointerType::getUnqual(argTy));
+    args[i] = Builder.CreateLoad(argp);
 
     unsigned argSize = argTy->getPrimitiveSizeInBits();
-    idx += ((!!argSize ? argSize : 64) + 63)/64;
+    idx += ((!!argSize ? argSize : 64) + 63) / 64;
   }
 
-  Constant *dispatchTarget =
-    dispatchModule->getOrInsertFunction(target->getName(), FTy,
-                                        target->getAttributes());
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 0)
-  Instruction *result = CallInst::Create(dispatchTarget,
-                                         llvm::ArrayRef<Value *>(args, args+i),
-                                         "", dBB);
-#else
-  Instruction *result = CallInst::Create(dispatchTarget, args, args+i, "", dBB);
-#endif
-  if (result->getType() != Type::getVoidTy(getGlobalContext())) {
-    Instruction *resp = 
-      new BitCastInst(argI64s, PointerType::getUnqual(result->getType()), 
-                      "", dBB);
-    new StoreInst(result, resp, dBB);
+  auto dispatchTarget = module->getOrInsertFunction(target->getName(), FTy,
+                                                    target->getAttributes());
+  auto result = Builder.CreateCall(dispatchTarget,
+                                   llvm::ArrayRef<Value *>(args, args + i));
+  if (result->getType() != Type::getVoidTy(ctx)) {
+    auto resp = Builder.CreateBitCast(
+        argI64s, PointerType::getUnqual(result->getType()));
+    Builder.CreateStore(result, resp);
   }
 
-  ReturnInst::Create(getGlobalContext(), dBB);
+  Builder.CreateRetVoid();
 
   delete[] args;
 
   return dispatcher;
+}
+
+int ExternalDispatcherImpl::getLastErrno() { return lastErrno; }
+void ExternalDispatcherImpl::setLastErrno(int newErrno) {
+  lastErrno = newErrno;
+}
+
+ExternalDispatcher::ExternalDispatcher(llvm::LLVMContext &ctx)
+    : impl(new ExternalDispatcherImpl(ctx)) {}
+
+ExternalDispatcher::~ExternalDispatcher() { delete impl; }
+
+bool ExternalDispatcher::executeCall(llvm::Function *function,
+                                     llvm::Instruction *i, uint64_t *args) {
+  return impl->executeCall(function, i, args);
+}
+
+void *ExternalDispatcher::resolveSymbol(const std::string &name) {
+  return impl->resolveSymbol(name);
+}
+
+int ExternalDispatcher::getLastErrno() { return impl->getLastErrno(); }
+void ExternalDispatcher::setLastErrno(int newErrno) {
+  impl->setLastErrno(newErrno);
+}
 }

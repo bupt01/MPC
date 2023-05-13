@@ -1,0 +1,31 @@
+(set-option :produce-unsat-cores true)
+(echo "MEMORY-ORDER CONSTRAINTS -----")
+
+(assert (distinct ))
+
+
+(echo "READ-WRITE CONSTRAINTS WITH SIMPLIFY -----")
+
+(echo "PATH CONSTRAINTS -----")
+
+(echo "LOCKING CONSTRAINTS -----")
+
+
+(echo "FORK-START CONSTRAINTS -----")
+
+
+(echo "JOIN-EXIT CONSTRAINTS -----")
+
+
+(echo "WAIT-SIGNAL CONSTRAINTS -----")
+
+
+(check-sat)
+
+(get-model)
+
+(get-unsat-core)
+
+(echo "end")
+(reset)
+

@@ -7,15 +7,28 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "klee/Constraints.h"
+#include "klee/Expr/Constraints.h"
 
-#include "klee/util/ExprPPrinter.h"
-#include "klee/util/ExprVisitor.h"
+#include "klee/Expr/ExprPPrinter.h"
+#include "klee/Expr/ExprVisitor.h"
+#include "klee/Internal/Module/KModule.h"
+#include "klee/OptionCategories.h"
 
-#include <iostream>
+#include "llvm/IR/Function.h"
+#include "llvm/Support/CommandLine.h"
+
 #include <map>
 
 using namespace klee;
+
+namespace {
+llvm::cl::opt<bool> RewriteEqualities(
+    "rewrite-equalities",
+    llvm::cl::desc("Rewrite existing constraints when an equality with a "
+                   "constant is added (default=true)"),
+    llvm::cl::init(true),
+    llvm::cl::cat(SolvingCat));
+}
 
 class ExprReplaceVisitor : public ExprVisitor {
 private:
@@ -112,13 +125,7 @@ ref<Expr> ConstraintManager::simplifyExpr(ref<Expr> e) const {
 }
 
 void ConstraintManager::addConstraintInternal(ref<Expr> e) {
-  // rewrite any known equalities 
-
-  // XXX should profile the effects of this and the overhead.
-  // traversing the constraints looking for equalities is hardly the
-  // slowest thing we do, but it is probably nicer to have a
-  // ConstraintSet ADT which efficiently remembers obvious patterns
-  // (byte-constant comparison).
+  // rewrite any known equalities and split Ands into different conjuncts
 
   switch (e->getKind()) {
   case Expr::Constant:
@@ -135,10 +142,17 @@ void ConstraintManager::addConstraintInternal(ref<Expr> e) {
   }
 
   case Expr::Eq: {
-    BinaryExpr *be = cast<BinaryExpr>(e);
-    if (isa<ConstantExpr>(be->left)) {
-      ExprReplaceVisitor visitor(be->right, be->left);
-      rewriteConstraints(visitor);
+    if (RewriteEqualities) {
+      // XXX: should profile the effects of this and the overhead.
+      // traversing the constraints looking for equalities is hardly the
+      // slowest thing we do, but it is probably nicer to have a
+      // ConstraintSet ADT which efficiently remembers obvious patterns
+      // (byte-constant comparison).
+      BinaryExpr *be = cast<BinaryExpr>(e);
+      if (isa<ConstantExpr>(be->left)) {
+	ExprReplaceVisitor visitor(be->right, be->left);
+	rewriteConstraints(visitor);
+      }
     }
     constraints.push_back(e);
     break;
@@ -149,12 +163,6 @@ void ConstraintManager::addConstraintInternal(ref<Expr> e) {
     break;
   }
 }
-
-void ConstraintManager::addConstraint(ref<Expr> e) {
-  e = simplifyExpr(e);
-  addConstraintInternal(e);
-}
-
 bool ConstraintManager::rewriteConstraints1(ExprVisitor &visitor) {
   ConstraintManager::constraints_ty old;
   bool changed = false;
@@ -180,34 +188,6 @@ bool ConstraintManager::rewriteConstraints1(ExprVisitor &visitor) {
 
   return changed;
 }
-
-
-
-ref<Expr> ConstraintManager::simplifyExpr1(ref<Expr> e) const {
-  if (isa<ConstantExpr>(e))
-    return e;
-
-  std::map< ref<Expr>, ref<Expr> > equalities;
-  
-  for (ConstraintManager::constraints_ty::const_iterator 
-         it = constraints1.begin(), ie = constraints1.end(); it != ie; ++it) {
-    if (const EqExpr *ee = dyn_cast<EqExpr>(*it)) {
-      if (isa<ConstantExpr>(ee->left)) {
-        equalities.insert(std::make_pair(ee->right,
-                                         ee->left));
-      } else {
-        equalities.insert(std::make_pair(*it,
-                                         ConstantExpr::alloc(1, Expr::Bool)));
-      }
-    } else {
-      equalities.insert(std::make_pair(*it,
-                                       ConstantExpr::alloc(1, Expr::Bool)));
-    }
-  }
-
-  return ExprReplaceVisitor2(equalities).visit(e);
-}
-
 
 void ConstraintManager::addConstraintInternal1(ref<Expr> e, std::pair<int, int> index) {
   // rewrite any known equalities 
@@ -258,8 +238,36 @@ void ConstraintManager::addConstraintInternal1(ref<Expr> e, std::pair<int, int> 
     break;
   }
 }
+ref<Expr> ConstraintManager::simplifyExpr1(ref<Expr> e) const {
+  if (isa<ConstantExpr>(e))
+    return e;
+
+  std::map< ref<Expr>, ref<Expr> > equalities;
+  
+  for (ConstraintManager::constraints_ty::const_iterator 
+         it = constraints1.begin(), ie = constraints1.end(); it != ie; ++it) {
+    if (const EqExpr *ee = dyn_cast<EqExpr>(*it)) {
+      if (isa<ConstantExpr>(ee->left)) {
+        equalities.insert(std::make_pair(ee->right,
+                                         ee->left));
+      } else {
+        equalities.insert(std::make_pair(*it,
+                                         ConstantExpr::alloc(1, Expr::Bool)));
+      }
+    } else {
+      equalities.insert(std::make_pair(*it,
+                                       ConstantExpr::alloc(1, Expr::Bool)));
+    }
+  }
+
+  return ExprReplaceVisitor2(equalities).visit(e);
+}
 
 
+void ConstraintManager::addConstraint(ref<Expr> e) {
+  e = simplifyExpr(e);
+  addConstraintInternal(e);
+}
 void ConstraintManager::addConstraint1(ref<Expr> e, std::pair<int, int> index) {
   ////////////////////
   e = simplifyExpr1(e);

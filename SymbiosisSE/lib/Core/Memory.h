@@ -11,13 +11,14 @@
 #define KLEE_MEMORY_H
 
 #include "Context.h"
-#include "klee/Expr.h"
+#include "TimingSolver.h"
+
+#include "klee/Expr/Expr.h"
 
 #include "llvm/ADT/StringExtras.h"
 
-#include <vector>
 #include <string>
-#include <iostream>
+#include <vector>
 
 namespace llvm {
   class Value;
@@ -28,15 +29,19 @@ namespace klee {
 class BitArray;
 class MemoryManager;
 class Solver;
+class ArrayCache;
 
 class MemoryObject {
   friend class STPBuilder;
   friend class ObjectState;
   friend class ExecutionState;
+  friend class ref<MemoryObject>;
+  friend class ref<const MemoryObject>;
 
 private:
   static int counter;
-  mutable unsigned refCount;
+  /// @brief Required by klee::ref-managed objects
+  mutable class ReferenceCounter _refCount;
 
 public:
   unsigned id;
@@ -50,8 +55,6 @@ public:
   mutable bool isGlobal;
   bool isFixed;
 
-  /// true if created by us.
-  bool fake_object;
   bool isUserSpecified;
 
   MemoryManager *parent;
@@ -75,8 +78,7 @@ public:
   // XXX this is just a temp hack, should be removed
   explicit
   MemoryObject(uint64_t _address) 
-    : refCount(0),
-      id(counter++), 
+    : id(counter++),
       address(_address),
       size(0),
       isFixed(true),
@@ -88,15 +90,13 @@ public:
                bool _isLocal, bool _isGlobal, bool _isFixed,
                const llvm::Value *_allocSite,
                MemoryManager *_parent)
-    : refCount(0), 
-      id(counter++),
+    : id(counter++),
       address(_address),
       size(_size),
       name("unnamed"),
       isLocal(_isLocal),
       isGlobal(_isGlobal),
       isFixed(_isFixed),
-      fake_object(false),
       isUserSpecified(false),
       parent(_parent), 
       allocSite(_allocSite) {
@@ -144,19 +144,41 @@ public:
       return ConstantExpr::alloc(0, Expr::Bool);
     }
   }
+
+  /// Compare this object with memory object b.
+  /// \param b memory object to compare with
+  /// \return <0 if this is smaller, 0 if both are equal, >0 if b is smaller
+  int compare(const MemoryObject &b) const {
+    // Short-cut with id
+    if (id == b.id)
+      return 0;
+    if (address != b.address)
+      return (address < b.address ? -1 : 1);
+
+    if (size != b.size)
+      return (size < b.size ? -1 : 1);
+
+    if (allocSite != b.allocSite)
+      return (allocSite < b.allocSite ? -1 : 1);
+
+    return 0;
+  }
 };
 
 class ObjectState {
 private:
   friend class AddressSpace;
+  friend class ref<ObjectState>;
+
   unsigned copyOnWriteOwner; // exclusively for AddressSpace
 
-  friend class ObjectHolder;
-  unsigned refCount;
+  /// @brief Required by klee::ref-managed objects
+  class ReferenceCounter _refCount;
 
-  const MemoryObject *object;
+  ref<const MemoryObject> object;
 
   uint8_t *concreteStore;
+
   // XXX cleanup name of flushMask (its backwards or something)
   BitArray *concreteMask;
 
@@ -186,7 +208,7 @@ public:
   ObjectState(const ObjectState &os);
   ~ObjectState();
 
-  const MemoryObject *getObject() const { return object; }
+  const MemoryObject *getObject() const { return object.get(); }
 
   void setReadOnly(bool ro) { readOnly = ro; }
 
@@ -207,6 +229,14 @@ public:
   void write16(unsigned offset, uint16_t value);
   void write32(unsigned offset, uint32_t value);
   void write64(unsigned offset, uint64_t value);
+  void print() const;
+
+  /*
+    Looks at all the symbolic bytes of this object, gets a value for them
+    from the solver and puts them in the concreteStore.
+  */
+  void flushToConcreteStore(TimingSolver *solver,
+                            const ExecutionState &state) const;
 
 private:
   const UpdateList &getUpdates() const;
@@ -234,9 +264,9 @@ private:
   void markByteUnflushed(unsigned offset);
   void setKnownSymbolic(unsigned offset, Expr *value);
 
-  void print();
+  ArrayCache *getArrayCache() const;
 };
   
 } // End klee namespace
 
-#endif
+#endif /* KLEE_MEMORY_H */

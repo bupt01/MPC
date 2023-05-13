@@ -1,0 +1,191 @@
+MEMORY-ORDER CONSTRAINTS -----
+READ-WRITE CONSTRAINTS WITH SIMPLIFY -----
+PATH CONSTRAINTS -----
+LOCKING CONSTRAINTS -----
+FORK-START CONSTRAINTS -----
+JOIN-EXIT CONSTRAINTS -----
+WAIT-SIGNAL CONSTRAINTS -----
+sat
+(model 
+  ;; universe for distinct-elems!0:
+  ;;   distinct-elems!0!val!0 distinct-elems!0!val!10 distinct-elems!0!val!18 distinct-elems!0!val!30 distinct-elems!0!val!19 distinct-elems!0!val!32 distinct-elems!0!val!20 distinct-elems!0!val!27 distinct-elems!0!val!3 distinct-elems!0!val!15 distinct-elems!0!val!16 distinct-elems!0!val!1 distinct-elems!0!val!8 distinct-elems!0!val!17 distinct-elems!0!val!24 distinct-elems!0!val!21 distinct-elems!0!val!23 distinct-elems!0!val!12 distinct-elems!0!val!2 distinct-elems!0!val!4 distinct-elems!0!val!31 distinct-elems!0!val!33 distinct-elems!0!val!29 distinct-elems!0!val!11 distinct-elems!0!val!13 distinct-elems!0!val!9 distinct-elems!0!val!25 distinct-elems!0!val!28 distinct-elems!0!val!7 distinct-elems!0!val!6 distinct-elems!0!val!5 distinct-elems!0!val!14 distinct-elems!0!val!26 distinct-elems!0!val!22 
+  ;; -----------
+  ;; definitions for universe elements:
+  (declare-fun distinct-elems!0!val!0 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!10 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!18 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!30 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!19 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!32 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!20 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!27 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!3 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!15 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!16 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!1 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!8 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!17 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!24 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!21 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!23 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!12 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!2 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!4 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!31 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!33 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!29 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!11 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!13 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!9 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!25 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!28 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!7 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!6 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!5 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!14 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!26 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!22 () distinct-elems!0)
+  ;; cardinality constraint:
+  (forall ((x distinct-elems!0))
+          (or (= x distinct-elems!0!val!0)
+              (= x distinct-elems!0!val!10)
+              (= x distinct-elems!0!val!18)
+              (= x distinct-elems!0!val!30)
+              (= x distinct-elems!0!val!19)
+              (= x distinct-elems!0!val!32)
+              (= x distinct-elems!0!val!20)
+              (= x distinct-elems!0!val!27)
+              (= x distinct-elems!0!val!3)
+              (= x distinct-elems!0!val!15)
+              (= x distinct-elems!0!val!16)
+              (= x distinct-elems!0!val!1)
+              (= x distinct-elems!0!val!8)
+              (= x distinct-elems!0!val!17)
+              (= x distinct-elems!0!val!24)
+              (= x distinct-elems!0!val!21)
+              (= x distinct-elems!0!val!23)
+              (= x distinct-elems!0!val!12)
+              (= x distinct-elems!0!val!2)
+              (= x distinct-elems!0!val!4)
+              (= x distinct-elems!0!val!31)
+              (= x distinct-elems!0!val!33)
+              (= x distinct-elems!0!val!29)
+              (= x distinct-elems!0!val!11)
+              (= x distinct-elems!0!val!13)
+              (= x distinct-elems!0!val!9)
+              (= x distinct-elems!0!val!25)
+              (= x distinct-elems!0!val!28)
+              (= x distinct-elems!0!val!7)
+              (= x distinct-elems!0!val!6)
+              (= x distinct-elems!0!val!5)
+              (= x distinct-elems!0!val!14)
+              (= x distinct-elems!0!val!26)
+              (= x distinct-elems!0!val!22)))
+  ;; -----------
+  (define-fun InitR-T0*main_ret*pthread_create2__74188984*0 () Int
+    65)
+  (define-fun OS-fork_1-0-0&M0.c@115 () Int
+    3)
+  (define-fun OS-start-1&M0.c@16 () Int
+    8)
+  (define-fun OW-T0*main_shared*y_74188592*0-3-0&M0.c@31 () Int
+    21)
+  (define-fun OR-T0*main_ret*pthread_create2__74188984*0-0-0&M0.c@116 () Int
+    4)
+  (define-fun R-T2*testT2_ret*pthread_mutex_lock1__74189352*0-2-0 () Int
+    69)
+  (define-fun OS-fork_3-0-0&M0.c@117 () Int
+    10)
+  (define-fun OS-join_1-0-0&M0.c@129 () Int
+    18)
+  (define-fun OS-start-2&M0.c@39 () Int
+    6)
+  (define-fun InitR-T2*testT2_j_74189152*0 () Int
+    2)
+  (define-fun InitR-T1*testT1_i_74189208*0 () Int
+    67)
+  (define-fun OR-T1*testT1_i_74189208*0-1-1&M0.c@20 () Int
+    13)
+  (define-fun OS-exit-3&M0.c@33 () Int
+    28)
+  (define-fun OS-join_2-0-0&M0.c@130 () Int
+    32)
+  (define-fun R-T1*testT1_i_74189208*0-1-1 () Int
+    67)
+  (define-fun R-T0*main_ret*pthread_create1__74188928*0-0-0 () Int
+    64)
+  (define-fun OW-T0*main_shared*x_74188576*0-3-0&M0.c@30 () Int
+    17)
+  (define-fun R-T0*main_shared*y_74188592*0-2-1 () Int
+    0)
+  (define-fun OS-lock_0x47c7f60lock-2-0&M0.c@44 () Int
+    25)
+  (define-fun OR-T0*main_shared*x_74188576*0-3-1&M0.c@32 () Int
+    23)
+  (define-fun OW-T0*main_shared*x_74188576*0-2-0&M0.c@40 () Int
+    12)
+  (define-fun OW-T2*testT2_j_74189152*0-2-0&M0.c@44 () Int
+    22)
+  (define-fun InitR-T2*testT2_ret*pthread_mutex_lock1__74189352*0 () Int
+    69)
+  (define-fun R-T0*main_shared*x_74188576*0-3-1 () Int
+    5)
+  (define-fun OW-T0*main_shared*y_74188592*0-0-0&M0.c@113 () Int
+    1)
+  (define-fun R-T2*testT2_j_74189152*0-2-2 () Int
+    2)
+  (define-fun OS-exit-1&M0.c@21 () Int
+    14)
+  (define-fun OS-exit-2&M0.c@45 () Int
+    31)
+  (define-fun OW-T0*main_shared*x_74188576*0-1-0&M0.c@18 () Int
+    9)
+  (define-fun OS-unlock_0x47c7f60lock-2-0&M0.c@47 () Int
+    29)
+  (define-fun OR-T2*testT2_ret*pthread_mutex_lock1__74189352*0-2-0&M0.c@45 () Int
+    24)
+  (define-fun R-T2*testT2_j_74189152*0-2-3 () Int
+    1)
+  (define-fun OW-T0*main_shared*x_74188576*0-0-0&M0.c@113 () Int
+    0)
+  (define-fun OR-T2*testT2_j_74189152*0-2-1&M0.c@42 () Int
+    16)
+  (define-fun OW-T0*main_shared*y_74188592*0-1-0&M0.c@19 () Int
+    11)
+  (define-fun R-T0*main_ret*pthread_create2__74188984*0-0-0 () Int
+    65)
+  (define-fun OW-T0*main_shared*y_74188592*0-2-0&M0.c@46 () Int
+    27)
+  (define-fun OS-fork_2-0-0&M0.c@116 () Int
+    5)
+  (define-fun OR-T2*testT2_j_74189152*0-2-3&M0.c@44 () Int
+    30)
+  (define-fun OR-T2*testT2_j_74189152*0-2-2&M0.c@44 () Int
+    20)
+  (define-fun OR-T0*main_shared*y_74188592*0-2-1&M0.c@46 () Int
+    26)
+  (define-fun OS-exit-0&M0.c@132 () Int
+    34)
+  (define-fun OS-start-3&M0.c@29 () Int
+    15)
+  (define-fun R-T2*testT2_j_74189152*0-2-1 () Int
+    2)
+  (define-fun OR-T0*main_ret*pthread_create3__74189040*0-0-0&M0.c@117 () Int
+    7)
+  (define-fun R-T0*main_ret*pthread_create3__74189040*0-0-0 () Int
+    66)
+  (define-fun OR-T0*main_ret*pthread_create1__74188928*0-0-0&M0.c@115 () Int
+    2)
+  (define-fun OS-join_2-0-0&M0.c@131 () Int
+    33)
+  (define-fun InitR-T0*main_ret*pthread_create1__74188928*0 () Int
+    64)
+  (define-fun InitR-T0*main_ret*pthread_create3__74189040*0 () Int
+    66)
+  (define-fun InitR-T0*main_shared*y_74188592*0 () Int
+    0)
+  (define-fun InitR-T0*main_shared*x_74188576*0 () Int
+    0)
+)
+(error "line 223 column 15: unsat core is not available")
+end

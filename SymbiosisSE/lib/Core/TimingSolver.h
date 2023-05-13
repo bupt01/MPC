@@ -10,22 +10,21 @@
 #ifndef KLEE_TIMINGSOLVER_H
 #define KLEE_TIMINGSOLVER_H
 
-#include "klee/Expr.h"
-#include "klee/Solver.h"
+#include "klee/Expr/Expr.h"
+#include "klee/Solver/Solver.h"
+#include "klee/Internal/System/Time.h"
 
 #include <vector>
 
 namespace klee {
   class ExecutionState;
-  class Solver;
-  class STPSolver;
+  class Solver;  
 
   /// TimingSolver - A simple class which wraps a solver and handles
   /// tracking the statistics that we care about.
   class TimingSolver {
   public:
     Solver *solver;
-    STPSolver *stpSolver;
     bool simplifyExprs;
 
   public:
@@ -34,15 +33,18 @@ namespace klee {
     /// \param _simplifyExprs - Whether expressions should be
     /// simplified (via the constraint manager interface) prior to
     /// querying.
-    TimingSolver(Solver *_solver, STPSolver *_stpSolver, 
-                 bool _simplifyExprs = true) 
-      : solver(_solver), stpSolver(_stpSolver), simplifyExprs(_simplifyExprs) {}
+    TimingSolver(Solver *_solver, bool _simplifyExprs = true) 
+      : solver(_solver), simplifyExprs(_simplifyExprs) {}
     ~TimingSolver() {
       delete solver;
     }
 
-    void setTimeout(double t) {
-      stpSolver->setTimeout(t);
+    void setTimeout(time::Span t) {
+      solver->setCoreSolverTimeout(t);
+    }
+    
+    char *getConstraintLog(const Query& query) {
+      return solver->getConstraintLog(query);
     }
 
     bool evaluate(const ExecutionState&, ref<Expr>, Solver::Validity &result);
@@ -68,4 +70,4 @@ namespace klee {
 
 }
 
-#endif
+#endif /* KLEE_TIMINGSOLVER_H */

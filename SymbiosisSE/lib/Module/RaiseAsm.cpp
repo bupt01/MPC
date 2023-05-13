@@ -9,20 +9,23 @@
 
 #include "Passes.h"
 #include "klee/Config/Version.h"
+#include "klee/Internal/Support/ErrorHandling.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/InlineAsm.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Instructions.h"
 
-#include "llvm/InlineAsm.h"
-#if LLVM_VERSION_CODE >= LLVM_VERSION(2, 7)
-#include "llvm/LLVMContext.h"
-#endif
-#if LLVM_VERSION_CODE >= LLVM_VERSION(2, 9)
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/Host.h"
-#include "llvm/Target/TargetLowering.h"
-#if LLVM_VERSION_CODE < LLVM_VERSION(3, 0)
-#include "llvm/Target/TargetRegistry.h"
-#else
 #include "llvm/Support/TargetRegistry.h"
-#endif
+#if LLVM_VERSION_CODE >= LLVM_VERSION(6, 0)
+#include "llvm/CodeGen/TargetLowering.h"
+#include "llvm/CodeGen/TargetSubtargetInfo.h"
+#include "llvm/Target/TargetMachine.h"
+#else
+#include "llvm/Target/TargetLowering.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Target/TargetSubtargetInfo.h"
 #endif
 
 using namespace llvm;
@@ -30,55 +33,45 @@ using namespace klee;
 
 char RaiseAsmPass::ID = 0;
 
-Function *RaiseAsmPass::getIntrinsic(llvm::Module &M,
-                                     unsigned IID,
-                                     LLVM_TYPE_Q Type **Tys,
-                                     unsigned NumTys) {  
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 0)
+Function *RaiseAsmPass::getIntrinsic(llvm::Module &M, unsigned IID, Type **Tys,
+                                     unsigned NumTys) {
   return Intrinsic::getDeclaration(&M, (llvm::Intrinsic::ID) IID,
                                    llvm::ArrayRef<llvm::Type*>(Tys, NumTys));
-#else
-  return Intrinsic::getDeclaration(&M, (llvm::Intrinsic::ID) IID, Tys, NumTys);
-#endif
 }
 
 // FIXME: This should just be implemented as a patch to
 // X86TargetAsmInfo.cpp, then everyone will benefit.
 bool RaiseAsmPass::runOnInstruction(Module &M, Instruction *I) {
-  if (CallInst *ci = dyn_cast<CallInst>(I)) {
-    if (InlineAsm *ia = dyn_cast<InlineAsm>(ci->getCalledValue())) {
-#if LLVM_VERSION_CODE >= LLVM_VERSION(2, 9)
-      (void) ia;
-      return TLI && TLI->ExpandInlineAsm(ci);
-#else
-      const std::string &as = ia->getAsmString();
-      const std::string &cs = ia->getConstraintString();
-      const llvm::Type *T = ci->getType();
+  // We can just raise inline assembler using calls
+  CallInst *ci = dyn_cast<CallInst>(I);
+  if (!ci)
+    return false;
 
-      // bswaps
-#if LLVM_VERSION_CODE < LLVM_VERSION(2, 8)
-      unsigned NumOperands = ci->getNumOperands();
-      llvm::Value *Arg0 = NumOperands > 1 ? ci->getOperand(1) : 0;
+  InlineAsm *ia = dyn_cast<InlineAsm>(ci->getCalledValue());
+  if (!ia)
+    return false;
+
+  // Try to use existing infrastructure
+  if (!TLI)
+    return false;
+
+  if (TLI->ExpandInlineAsm(ci))
+    return true;
+
+  if (triple.getArch() == llvm::Triple::x86_64 &&
+      (triple.getOS() == llvm::Triple::Linux ||
+       triple.getOS() == llvm::Triple::Darwin ||
+       triple.getOS() == llvm::Triple::FreeBSD)) {
+
+    if (ia->getAsmString() == "" && ia->hasSideEffects()) {
+      IRBuilder<> Builder(I);
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 9)
+      Builder.CreateFence(llvm::AtomicOrdering::SequentiallyConsistent);
 #else
-      unsigned NumOperands = ci->getNumArgOperands() + 1;
-      llvm::Value *Arg0 = NumOperands > 1 ? ci->getArgOperand(0) : 0;
+      Builder.CreateFence(llvm::SequentiallyConsistent);
 #endif
-      if (Arg0 && T == Arg0->getType() &&
-          ((T == llvm::Type::getInt16Ty(getGlobalContext()) && 
-            as == "rorw $$8, ${0:w}" &&
-            cs == "=r,0,~{dirflag},~{fpsr},~{flags},~{cc}") ||
-           (T == llvm::Type::getInt32Ty(getGlobalContext()) &&
-            as == "rorw $$8, ${0:w};rorl $$16, $0;rorw $$8, ${0:w}" &&
-            cs == "=r,0,~{dirflag},~{fpsr},~{flags},~{cc}"))) {
-        Function *F = getIntrinsic(M, Intrinsic::bswap, Arg0->getType());
-#if LLVM_VERSION_CODE < LLVM_VERSION(2, 8)
-        ci->setOperand(0, F);
-#else
-        ci->setCalledFunction(F);
-#endif
-        return true;
-      }
-#endif
+      I->eraseFromParent();
+      return true;
     }
   }
 
@@ -88,39 +81,38 @@ bool RaiseAsmPass::runOnInstruction(Module &M, Instruction *I) {
 bool RaiseAsmPass::runOnModule(Module &M) {
   bool changed = false;
 
-#if LLVM_VERSION_CODE >= LLVM_VERSION(2, 9)
   std::string Err;
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
   std::string HostTriple = llvm::sys::getDefaultTargetTriple();
-#else
-  std::string HostTriple = llvm::sys::getHostTriple();
-#endif
   const Target *NativeTarget = TargetRegistry::lookupTarget(HostTriple, Err);
+
+  TargetMachine * TM = 0;
   if (NativeTarget == 0) {
-    llvm::errs() << "Warning: unable to select native target: " << Err << "\n";
+    klee_warning("Warning: unable to select native target: %s", Err.c_str());
     TLI = 0;
   } else {
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
-    TargetMachine *TM = NativeTarget->createTargetMachine(HostTriple, "", "",
-                                                          TargetOptions());
-#elif LLVM_VERSION_CODE >= LLVM_VERSION(3, 0)
-    TargetMachine *TM = NativeTarget->createTargetMachine(HostTriple, "", "");
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 9)
+    TM = NativeTarget->createTargetMachine(HostTriple, "", "", TargetOptions(),
+        None);
+    TLI = TM->getSubtargetImpl(*(M.begin()))->getTargetLowering();
 #else
-    TargetMachine *TM = NativeTarget->createTargetMachine(HostTriple, "");
+    TM = NativeTarget->createTargetMachine(HostTriple, "", "", TargetOptions());
+    TLI = TM->getSubtargetImpl(*(M.begin()))->getTargetLowering();
 #endif
-    TLI = TM->getTargetLowering();
+
+    triple = llvm::Triple(HostTriple);
   }
-#endif
   
   for (Module::iterator fi = M.begin(), fe = M.end(); fi != fe; ++fi) {
     for (Function::iterator bi = fi->begin(), be = fi->end(); bi != be; ++bi) {
       for (BasicBlock::iterator ii = bi->begin(), ie = bi->end(); ii != ie;) {
-        Instruction *i = ii;
+        Instruction *i = &*ii;
         ++ii;  
         changed |= runOnInstruction(M, i);
       }
     }
   }
+
+  delete TM;
 
   return changed;
 }

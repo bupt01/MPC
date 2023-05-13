@@ -16,23 +16,27 @@
 #define KLEE_EXECUTOR_H
 
 #include "klee/ExecutionState.h"
-#include "klee/Interpreter.h"
+#include "klee/Expr/ArrayCache.h"
 #include "klee/Internal/Module/Cell.h"
 #include "klee/Internal/Module/KInstruction.h"
 #include "klee/Internal/Module/KModule.h"
-#include "llvm/Support/CallSite.h"
-#include <vector>
-#include <string>
-#include <map>
-#include <set>
+#include "klee/Internal/System/Time.h"
+#include "klee/Interpreter.h"
 
-#include "GlobalState.h"  //yqp
-//#include "AtomicityUnit.h"
+#include "llvm/ADT/Twine.h"
+#include "llvm/Support/raw_ostream.h"
 
+#include "../Expr/ArrayExprOptimizer.h"
+
+#include "GlobalState.h"  //lz
 #include "AvisoUtil.h"     //Nuno
-#include <time.h>          //Nuno
 
-using namespace std;
+
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <vector>
 
 struct KTest;
 
@@ -45,7 +49,8 @@ namespace llvm {
   class Function;
   class GlobalValue;
   class Instruction;
-  class TargetData;
+  class LLVMContext;
+  class DataLayout;
   class Twine;
   class Value;
 }
@@ -72,112 +77,112 @@ namespace klee {
   class StatsTracker;
   class TimingSolver;
   class TreeStreamWriter;
+  class MergeHandler;
+  class MergingSearcher;
   template<class T> class ref;
+
+
 
   /// \todo Add a context object to keep track of data only live
   /// during an instruction step. Should contain addedStates,
   /// removedStates, and haltExecution, among others.
 
 class Executor : public Interpreter {
-  friend class BumpMergingSearcher;
-  friend class MergingSearcher;
   friend class RandomPathSearcher;
   friend class OwningSearcher;
   friend class WeightedRandomSearcher;
   friend class SpecialFunctionHandler;
   friend class StatsTracker;
-    
-    //** Nuno: Friend classes for BugRedux stuff
-    friend class ShortestPathSearcher;
-    friend class AvisoReplaySearcher;
-    friend class CallSeqReplayNonStopSearcher;
-    friend class AssertionNonStopSearcher;
-    friend class GeneralReplaySearcher;
-    friend class PathReplaySearcher;
-    friend class BranchRankingSearcher;
-    friend class SRCLineCntSearcher;
+  friend class MergeHandler;
+  friend class GeneralReplaySearcher;
+  friend class AvisoReplaySearcher;
+
 
 public:
-  class Timer {
-  public:
-    Timer();
-    virtual ~Timer();
-
-    /// The event callback.
-    virtual void run() = 0;
-  };
-
   typedef std::pair<ExecutionState*,ExecutionState*> StatePair;
-    bool usenonstopsearcher;                    //** Nuno: bugredux stuff (?)
-    ExecutionState *lastState;                  //** Nuno: state that achieved last goal
-    std::map<std::string, map<std::string, std::string> > tracePerThread;    //** Nuno: map: thread id -> state Id -> string containing the symb info collected by that thread
-    clock_t beginTime, endTime;  //** Nuno: vars to measure elapsed time
+  std::map<std::string, std::map<std::string, std::string> > tracePerThread;    //** Nuno: map: thread id -> state Id -> string containing the symb info collected by that thread
 
+  enum TerminateReason {
+    Abort,
+    Assert,
+    BadVectorAccess,
+    Exec,
+    External,
+    Free,
+    Model,
+    Overflow,
+    Ptr,
+    ReadOnly,
+    ReportError,
+    User,
+    Unhandled
+  };
+ clock_t beginTime, endTime;  //** Nuno: vars to measure elapsed time
 private:
-  class TimerInfo;
-    
-  KModule *kmodule;
+  std::string assertThread; //id of the thread containing the assert condition
+  std::map<std::string, std::map<int, int> > inputValues; // describe the values at each input point.
+  std::map<ref<Expr>, std::pair<std::string, std::string> > varaddrnamemap; // <context, name>
+  std::vector<llvm::BasicBlock*> basicblocks; //a vector of ordered basic blocks in the main module
+
+  void initTimers();
+  bool stateTerminate;
+  static const char *TerminateReasonNames[];
+	std::set<ref<Expr> > mallocAddresses;//lz
+  std::unique_ptr<KModule> kmodule;
   InterpreterHandler *interpreterHandler;
   Searcher *searcher;
-
+  void initTidMap();
+  std::map<int, int> occurTimes;
+  int numOfUndefinedBB;
   ExternalDispatcher *externalDispatcher;
   TimingSolver *solver;
   MemoryManager *memory;
+  std::map<std::string,std::vector<int> >threadbbiidsmap; //map: thread id -> basic block id
   std::set<ExecutionState*> states;
   StatsTracker *statsTracker;
   TreeStreamWriter *pathWriter, *symPathWriter;
-  SpecialFunctionHandler *specialFunctionHandler;
-  std::vector<TimerInfo*> timers;
-  PTree *processTree;
-
-  std::vector<llvm::BasicBlock*> basicblocks; //a vector of ordered basic blocks in the main module
-  std::map<std::string,std::vector<int> >threadbbiidsmap; //map: thread id -> basic block id
-  std::string assertThread; //id of the thread containing the assert condition
-  std::map<ref<Expr>, std::pair<std::string, std::string> > varaddrnamemap; // <context, name>
   bool failedExec; //flag that indicates whether the trace corresponds to a failing execution or not	    
-
-  unsigned tid;
-
-  int numOfUndefinedBB;
-
-  bool stateTerminate;
-
-   
-	std::map<int, int> tidMap, tidMap2;
-	map<int, int> occurTimes;
-	std::set<string> input;
-	std::map<string, std::map<int, int> > inputValues; // describe the values at each input point.
-	bool executionBasedOnGivenOrder;
-	GlobalState* gState;
-	std::map<int, vector<int> > threadToTrace;
-	std::map<ref<Expr>, std::pair<ref<Expr>, ref<Expr> > > addressToValue;
-	std::set<ref<Expr> > storedAddrs;
-	int currentOrder; 
-	std::map<ref<Expr>, std::string> locks; // lock -> threadID: which thread hold which lock
-	std::map<ref<Expr>, std::set<string> > releasedConds;//, preReleasedConds;
+  SpecialFunctionHandler *specialFunctionHandler;
+  TimerGroup timers;
+  std::map<ref<Expr>, std::pair<ref<Expr>, ref<Expr> > > addressToValue;
+  std::unique_ptr<PTree> processTree;
+  bool executionBasedOnGivenOrder;
+  GlobalState* gState;
+  int currentOrder; 
+  std::string readOrderFile(int ind);
+  void writeOrderFile();
+  std::set<std::string> input;
+  std::map<ref<Expr>, std::string> locks; // lock -> threadID: which thread hold which lock
+  std::map<ref<Expr>, std::set<std::string> > releasedConds;//, preReleasedConds;
 	std::map<ref<Expr>, std::set<ref<Expr> > > lockToConds;
 	std::map<ref<Expr>, std::vector<std::string> > condWait; // cond->vec<threadID>
-	std::set<ref<Expr> > broadcastFlag;
-	std::set<ref<Expr> > mallocAddresses;
-
-	void handleSymRetValue(ExecutionState &state, KInstruction* target);
-	std::string getContextStr(ExecutionState &state, const std::string &name);
-	ref<Expr> getInitValue(ExecutionState &state, ref<Expr> base,
-			KInstruction* ki, std::string name, int offset, Expr::Width width);
-	void addCondForPointerAccess(ExecutionState &state, llvm::Instruction *i, ref<Expr> v);
-
-
+  unsigned tid;
+  void addConstraint1(ExecutionState &state, ref<Expr> condition);
+  std::set<ref<Expr> > storedAddrs;
+  std::map<int, int> tidMap, tidMap2;
   /// Used to track states that have been added during the current
   /// instructions step. 
   /// \invariant \ref addedStates is a subset of \ref states. 
   /// \invariant \ref addedStates and \ref removedStates are disjoint.
-  std::set<ExecutionState*> addedStates;
+  std::vector<ExecutionState*> addedStates;
   /// Used to track states that have been removed during the current
   /// instructions step. 
   /// \invariant \ref removedStates is a subset of \ref states. 
   /// \invariant \ref addedStates and \ref removedStates are disjoint.
-  std::set<ExecutionState*> removedStates;
+  std::vector<ExecutionState *> removedStates;
+    std::pair<std::string, ref<Expr> >
+	  executeMakeSymbolic_yqp(ExecutionState &state,
+			  const MemoryObject *mo,
+			  const std::string &name,
+			  std::string &addrstr,
+			  KInstruction* ki);
+	void handleSymRetValue(ExecutionState &state, KInstruction* target);
 
+  void printSyncTrace(std::string type, std::string line, ExecutionState &state);
+  void controlPoint(ExecutionState &state, std::string nextOp);
+	ref<Expr> getInitValue(ExecutionState &state, ref<Expr> base,
+			KInstruction* ki, std::string name, int offset, Expr::Width width);
+	std::string getContextStr(ExecutionState &state, const std::string &name);
   /// When non-empty the Executor is running in "seed" mode. The
   /// states in this map will be executed in an arbitrary order
   /// (outside the normal search interface) until they terminate. When
@@ -186,7 +191,9 @@ private:
   /// happens with other states (that don't satisfy the seeds) depends
   /// on as-yet-to-be-determined flags.
   std::map<ExecutionState*, std::vector<SeedInfo> > seedMap;
-  
+  void terminateStateCLAPDirectly(ExecutionState &state);
+	void addCondForPointerAccess(ExecutionState &state, llvm::Instruction *i, ref<Expr> v);
+
   /// Map of globals to their representative memory object.
   std::map<const llvm::GlobalValue*, MemoryObject*> globalObjects;
 
@@ -200,10 +207,12 @@ private:
 
   /// When non-null the bindings that will be used for calls to
   /// klee_make_symbolic in order replay.
-  const struct KTest *replayOut;
+  const struct KTest *replayKTest;
+
   /// When non-null a list of branch decisions to be used for replay.
   const std::vector<bool> *replayPath;
-  /// The index into the current \ref replayOut or \ref replayPath
+
+  /// The index into the current \ref replayKTest or \ref replayPath
   /// object.
   unsigned replayPosition;
 
@@ -226,22 +235,42 @@ private:
   /// false, it is buggy (it needs to validate its writes).
   bool ivcEnabled;
 
-  /// The maximum time to allow for a single stp query.
-  double stpTimeout;  
+  /// The maximum time to allow for a single core solver query.
+  /// (e.g. for a single STP query)
+  time::Span coreSolverTimeout;
+
+  /// Maximum time to allow for a single instruction.
+  time::Span maxInstructionTime;
+
+  /// Assumes ownership of the created array objects
+  ArrayCache arrayCache;
+
+  /// File to print executed instructions to
+  std::unique_ptr<llvm::raw_ostream> debugInstFile;
+
+  // @brief Buffer used by logBuffer
+  std::string debugBufferString;
+
+  // @brief buffer to store logs before flushing to file
+  llvm::raw_string_ostream debugLogBuffer;
+
+  /// Optimizes expressions
+  ExprOptimizer optimizer;
+  void terminateStateCLAPWithConstraints(ExecutionState &state);
+
+
+  /// Points to the merging searcher of the searcher chain,
+  /// `nullptr` if merging is disabled
+  MergingSearcher *mergingSearcher = nullptr;
 
   llvm::Function* getTargetFunction(llvm::Value *calledVal,
                                     ExecutionState &state);
-  
+  void readOrderFile2();
   void executeInstruction(ExecutionState &state, KInstruction *ki);
-
-  void printFileLine(ExecutionState &state, KInstruction *ki);
-
+  void verfix(ExecutionState &initialState);//lz
   void run(ExecutionState &initialState);
-  void run2(ExecutionState &initialState); // yqp
-
-  bool allThreadsFinished();
-    
-  //run a new thread //Jeff: added
+  void run2(ExecutionState &initialState); // lz
+    //run a new thread //Jeff: added
   void runNewThread(ExecutionState &state,
           KInstruction *ki,
           std::vector< ref<Expr> > &arguments);
@@ -249,21 +278,7 @@ private:
           KInstruction *ki,
           std::vector< ref<Expr> > &arguments);
 
-
   void newBasicBlockEntry(ExecutionState &state, std::vector< ref<Expr> > &arguments);
-
-  void printSyncTrace(std::string type, string line, ExecutionState &state);
-  
-  std::string getOrderName(std::string type, string line, ExecutionState &state);
-  void controlPoint(ExecutionState &state, std::string nextOp);
-  void initTidMap();
-  std::string readOrderFile(int ind);
-  void readOrderFile2();
-  void writeOrderFile();
-  void writeTraceFile();
-  void schedule();
-
-  void forAget();
 
   // Given a concrete object in our [klee's] address space, add it to 
   // objects checked code can reference.
@@ -280,6 +295,12 @@ private:
   void transferToBasicBlock(llvm::BasicBlock *dst, 
 			    llvm::BasicBlock *src,
 			    ExecutionState &state);
+  void forAget();
+  ref<Expr> getValueFrom(ExecutionState &state,
+			  bool isWrite,
+			  ref<Expr> address,
+			  ref<Expr> value /* undef if read */,
+			  KInstruction *target /* undef if write */);
 
   void callExternalFunction(ExecutionState &state,
                             KInstruction *target,
@@ -319,12 +340,17 @@ private:
   /// done (realloc semantics). The initialized bytes will be the
   /// minimum of the size of the old and new objects, with remaining
   /// bytes initialized as specified by zeroMemory.
+  ///
+  /// \param allocationAlignment If non-zero, the given alignment is
+  /// used. Otherwise, the alignment is deduced via
+  /// Executor::getAllocationAlignment
   void executeAlloc(ExecutionState &state,
                     ref<Expr> size,
                     bool isLocal,
                     KInstruction *target,
                     bool zeroMemory=false,
-                    const ObjectState *reallocFrom=0);
+                    const ObjectState *reallocFrom=0,
+                    size_t allocationAlignment=0);
 
   /// Free the given address with checking for errors. If target is
   /// given it will be bound to 0 in the resulting states (this is a
@@ -339,8 +365,7 @@ private:
                    KInstruction *ki,
                    llvm::Function *f,
                    std::vector< ref<Expr> > &arguments);
-
-
+                   
   // do address resolution / object binding / out of bounds checking
   // and perform the operation
   void executeMemoryOperation(ExecutionState &state,
@@ -348,29 +373,9 @@ private:
                               ref<Expr> address,
                               ref<Expr> value /* undef if read */,
                               KInstruction *target /* undef if write */);
-  
-  ref<Expr> getValueFrom(ExecutionState &state,
-			  bool isWrite,
-			  ref<Expr> address,
-			  ref<Expr> value /* undef if read */,
-			  KInstruction *target /* undef if write */);
 
-
-  std::string getUniqueName(ExecutionState &state,
-                                   const MemoryObject *mo,
-                                   const std::string &name,
-                                   std::string &addrstr);
-  
   std::string executeMakeSymbolic(ExecutionState &state, const MemoryObject *mo,
                            const std::string &name, std::string &addrstr);
-
-  std::pair<std::string, ref<Expr> >
-	  executeMakeSymbolic_yqp(ExecutionState &state,
-			  const MemoryObject *mo,
-			  const std::string &name,
-			  std::string &addrstr,
-			  KInstruction* ki);
-
 
   /// Create a new state where each input condition has been added as
   /// a constraint and return the results. The input state is included
@@ -383,14 +388,15 @@ private:
   // Fork current and return states in which condition holds / does
   // not hold, respectively. One of the states is necessarily the
   // current state, and one of the states may be null.
-  StatePair fork(ExecutionState &current, ref<Expr> condition, ref<Expr> condition1, bool isInternal);
+  //StatePair fork(ExecutionState &current, ref<Expr> condition, bool isInternal); lz
+StatePair fork(ExecutionState &current, ref<Expr> condition, ref<Expr> condition1, bool isInternal);//lz
+
 
   /// Add the given (boolean) condition as a constraint on state. This
   /// function is a wrapper around the state's addConstraint function
-  /// which also manages manages propogation of implied values,
+  /// which also manages propagation of implied values,
   /// validity checks, and seed patching.
   void addConstraint(ExecutionState &state, ref<Expr> condition);
-  void addConstraint1(ExecutionState &state, ref<Expr> condition);
 
   // Called on [for now] concrete reads, replaces constant with a symbolic
   // Used for testing.
@@ -413,17 +419,22 @@ private:
   void bindLocal(KInstruction *target, 
                  ExecutionState &state, 
                  ref<Expr> value, ref<Expr> value1);
-
-  void bindLocal_yqp(KInstruction *target, 
-                 ExecutionState &state, 
-                 ref<Expr> value, ref<Expr> value1);
-
   void bindArgument(KFunction *kf, 
                     unsigned index,
                     ExecutionState &state,
                     ref<Expr> value);
 
-  ref<klee::ConstantExpr> evalConstantExpr(const llvm::ConstantExpr *ce);
+  /// Evaluates an LLVM constant expression.  The optional argument ki
+  /// is the instruction where this constant was encountered, or NULL
+  /// if not applicable/unavailable.
+  ref<klee::ConstantExpr> evalConstantExpr(const llvm::ConstantExpr *c,
+					   const KInstruction *ki = NULL);
+
+  /// Evaluates an LLVM constant.  The optional argument ki is the
+  /// instruction where this constant was encountered, or NULL if
+  /// not applicable/unavailable.
+  ref<klee::ConstantExpr> evalConstant(const llvm::Constant *c,
+				       const KInstruction *ki = NULL);
 
   /// Return a unique constant value for the given expression in the
   /// given state, if it has one (i.e. it provably only has a single
@@ -446,9 +457,12 @@ private:
   /// Get textual information regarding a memory address.
   std::string getAddressInfo(ExecutionState &state, ref<Expr> address) const;
 
+  // Determines the \param lastInstruction of the \param state which is not KLEE
+  // internal and returns its InstructionInfo
+  const InstructionInfo & getLastNonKleeInternalInstruction(const ExecutionState &state,
+      llvm::Instruction** lastInstruction);
 
-  void terminateStateCLAPWithConstraints(ExecutionState &state);
-  void terminateStateCLAPDirectly(ExecutionState &state);
+  bool shouldExitOn(enum TerminateReason termReason);
 
   // remove state from queue and delete
   void terminateState(ExecutionState &state);
@@ -457,10 +471,10 @@ private:
   // call exit handler and terminate state
   void terminateStateOnExit(ExecutionState &state);
   // call error handler and terminate state
-  void terminateStateOnError(ExecutionState &state, 
-                             const llvm::Twine &message,
-                             const char *suffix,
-                             const llvm::Twine &longMessage="");
+  void terminateStateOnError(ExecutionState &state, const llvm::Twine &message,
+                             enum TerminateReason termReason,
+                             const char *suffix = NULL,
+                             const llvm::Twine &longMessage = "");
 
   // call error handler and terminate state, for execution errors
   // (things that should not be possible, like illegal instruction or
@@ -468,7 +482,7 @@ private:
   void terminateStateOnExecError(ExecutionState &state, 
                                  const llvm::Twine &message,
                                  const llvm::Twine &info="") {
-    terminateStateOnError(state, message, "exec.err", info);
+    terminateStateOnError(state, message, Exec, NULL, info);
   }
 
   /// bindModuleConstants - Initialize the module constant table.
@@ -481,98 +495,92 @@ private:
   /// constant values.
   void bindInstructionConstants(KInstruction *KI);
 
-  void handlePointsToObj(ExecutionState &state, 
-                         KInstruction *target, 
-                         const std::vector<ref<Expr> > &arguments);
-
   void doImpliedValueConcretization(ExecutionState &state,
                                     ref<Expr> e,
                                     ref<ConstantExpr> value);
 
-  /// Add a timer to be executed periodically.
-  ///
-  /// \param timer The timer object to run on firings.
-  /// \param rate The approximate delay (in seconds) between firings.
-  void addTimer(Timer *timer, double rate);
+  void checkMemoryUsage();
+  void printDebugInstructions(ExecutionState &state);
+  void doDumpStates();
 
-  void initTimers();
-  void processTimers(ExecutionState *current,
-                     double maxInstTime);
-                
+  /// Only for debug purposes; enable via debugger or klee-control
+  void dumpStates();
+  void dumpPTree();
+
 public:
-  Executor(const InterpreterOptions &opts, InterpreterHandler *ie);
+  Executor(llvm::LLVMContext &ctx, const InterpreterOptions &opts,
+      InterpreterHandler *ie);
   virtual ~Executor();
 
   const InterpreterHandler& getHandler() {
     return *interpreterHandler;
   }
 
-  // XXX should just be moved out to utility module
-  ref<klee::ConstantExpr> evalConstant(const llvm::Constant *c);
+  void setPathWriter(TreeStreamWriter *tsw) override { pathWriter = tsw; }
 
-  virtual void setPathWriter(TreeStreamWriter *tsw) {
-    pathWriter = tsw;
-  }
-  virtual void setSymbolicPathWriter(TreeStreamWriter *tsw) {
+  void setSymbolicPathWriter(TreeStreamWriter *tsw) override {
     symPathWriter = tsw;
-  }      
+  }
 
-  virtual void setReplayOut(const struct KTest *out) {
+  void setReplayKTest(const struct KTest *out) override {
     assert(!replayPath && "cannot replay both buffer and path");
-    replayOut = out;
+    replayKTest = out;
     replayPosition = 0;
   }
 
-  virtual void setReplayPath(const std::vector<bool> *path) {
-    assert(!replayOut && "cannot replay both buffer and path");
+  void setReplayPath(const std::vector<bool> *path) override {
+    assert(!replayKTest && "cannot replay both buffer and path");
     replayPath = path;
     replayPosition = 0;
   }
 
-  virtual const llvm::Module *
-  setModule(llvm::Module *module, const ModuleOptions &opts);
+  llvm::Module *setModule(std::vector<std::unique_ptr<llvm::Module>> &modules,
+                          const ModuleOptions &opts) override;
 
-  virtual void useSeeds(const std::vector<struct KTest *> *seeds) { 
+  void useSeeds(const std::vector<struct KTest *> *seeds) override {
     usingSeeds = seeds;
   }
 
-  virtual void runFunctionAsMain(llvm::Function *f,
-                                 int argc,
-                                 char **argv,
-                                 char **envp);
+  void runFunctionAsMain(llvm::Function *f, int argc, char **argv,
+                         char **envp) override;
 
   /*** Runtime options ***/
-  
-  virtual void setHaltExecution(bool value) {
-    haltExecution = value;
-  }
 
-  virtual void setInhibitForking(bool value) {
-    inhibitForking = value;
-  }
+  void setHaltExecution(bool value) override { haltExecution = value; }
+
+  void setInhibitForking(bool value) override { inhibitForking = value; }
+
+  void prepareForEarlyExit() override;
 
   /*** State accessor methods ***/
 
-  virtual unsigned getPathStreamID(const ExecutionState &state);
+  unsigned getPathStreamID(const ExecutionState &state) override;
 
-  virtual unsigned getSymbolicPathStreamID(const ExecutionState &state);
+  unsigned getSymbolicPathStreamID(const ExecutionState &state) override;
 
-  virtual void getConstraintLog(const ExecutionState &state,
-                                std::string &res,
-                                bool asCVC = false);
+  void getConstraintLog(const ExecutionState &state, std::string &res,
+                        Interpreter::LogType logFormat =
+                            Interpreter::STP) override;
 
-  virtual bool getSymbolicSolution(const ExecutionState &state, 
-                                   std::vector< 
-                                   std::pair<std::string,
-                                   std::vector<unsigned char> > >
-                                   &res);
+  bool getSymbolicSolution(
+      const ExecutionState &state,
+      std::vector<std::pair<std::string, std::vector<unsigned char>>> &res)
+      override;
 
-  virtual void getCoveredLines(const ExecutionState &state,
-                               std::map<const std::string*, std::set<unsigned> > &res);
+  void getCoveredLines(const ExecutionState &state,
+                       std::map<const std::string *, std::set<unsigned>> &res)
+      override;
 
-  Expr::Width getWidthForLLVMType(LLVM_TYPE_Q llvm::Type *type) const;
+  Expr::Width getWidthForLLVMType(llvm::Type *type) const;
+  size_t getAllocationAlignment(const llvm::Value *allocSite) const;
+
+  /// Returns the errno location in memory of the state
+  int *getErrnoLocation(const ExecutionState &state) const;
+
+  MergingSearcher *getMergingSearcher() const { return mergingSearcher; };
+  void setMergingSearcher(MergingSearcher *ms) { mergingSearcher = ms; };
 };
   
 } // End klee namespace
 
-#endif
+#endif /* KLEE_EXECUTOR_H */

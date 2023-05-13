@@ -10,6 +10,7 @@
 #ifndef KLEE_SPECIALFUNCTIONHANDLER_H
 #define KLEE_SPECIALFUNCTIONHANDLER_H
 
+#include <iterator>
 #include <map>
 #include <vector>
 #include <string>
@@ -37,6 +38,38 @@ namespace klee {
     handlers_ty handlers;
     class Executor &executor;
 
+    struct HandlerInfo {
+      const char *name;
+      SpecialFunctionHandler::Handler handler;
+      bool doesNotReturn; /// Intrinsic terminates the process
+      bool hasReturnValue; /// Intrinsic has a return value
+      bool doNotOverride; /// Intrinsic should not be used if already defined
+    };
+
+    // const_iterator to iterate over stored HandlerInfo
+    // FIXME: Implement >, >=, <=, < operators
+    class const_iterator : public std::iterator<std::random_access_iterator_tag, HandlerInfo>
+    {
+      private:
+        value_type* base;
+        int index;
+      public:
+      const_iterator(value_type* hi) : base(hi), index(0) {};
+      const_iterator& operator++();  // pre-fix
+      const_iterator operator++(int); // post-fix
+      const value_type& operator*() { return base[index];}
+      const value_type* operator->() { return &(base[index]);}
+      const value_type& operator[](int i) { return base[i];}
+      bool operator==(const_iterator& rhs) { return (rhs.base + rhs.index) == (this->base + this->index);}
+      bool operator!=(const_iterator& rhs) { return !(*this == rhs);}
+    };
+
+    static const_iterator begin();
+    static const_iterator end();
+    static int size();
+
+
+
   public:
     SpecialFunctionHandler(Executor &_executor);
 
@@ -44,7 +77,10 @@ namespace klee {
     /// prepared for execution. At the moment this involves deleting
     /// unused function bodies and marking intrinsics with appropriate
     /// flags for use in optimizations.
-    void prepare();
+    ///
+    /// @param preservedFunctions contains all the function names which should
+    /// be preserved during optimization
+    void prepare(std::vector<const char *> &preservedFunctions);
 
     /// Initialize the internal handler map after the module has been
     /// prepared for execution.
@@ -58,8 +94,8 @@ namespace klee {
     /* Convenience routines */
 
     std::string readStringAtAddress(ExecutionState &state, ref<Expr> address);
-    
-	void makeSymArgument(ExecutionState &state,	KInstruction *target, ref<Expr> argument);
+   	void makeSymArgument(ExecutionState &state,	KInstruction *target, ref<Expr> argument);
+ 
     /* Handlers */
 
 #define HANDLER(name) void name(ExecutionState &state, \
@@ -75,7 +111,7 @@ namespace klee {
     HANDLER(handleDelete);    
     HANDLER(handleDeleteArray);
     HANDLER(handleExit);
-    HANDLER(handleAliasFunction);
+    HANDLER(handleErrnoLocation);
     HANDLER(handleFree);
     HANDLER(handleGetErrno);
     HANDLER(handleGetObjSize);
@@ -83,11 +119,14 @@ namespace klee {
     HANDLER(handleIsSymbolic);
     HANDLER(handleMakeSymbolic);
     HANDLER(handleMalloc);
+    HANDLER(handleMemalign);
     HANDLER(handleMarkGlobal);
-    HANDLER(handleMerge);
+    HANDLER(handleOpenMerge);
+    HANDLER(handleCloseMerge);
     HANDLER(handleNew);
     HANDLER(handleNewArray);
     HANDLER(handlePreferCex);
+    HANDLER(handlePosixPreferCex);
     HANDLER(handlePrintExpr);
     HANDLER(handlePrintRange);
     HANDLER(handleRange);
@@ -100,17 +139,17 @@ namespace klee {
     HANDLER(handleUnderConstrained);
     HANDLER(handleWarning);
     HANDLER(handleWarningOnce);
+    HANDLER(handleAddOverflow);
+    HANDLER(handleMulOverflow);
+    HANDLER(handleSubOverflow);
+    HANDLER(handleDivRemOverflow);
 
-    //myBasicBlockEntryi
     HANDLER(handleBasicBlockEntry);
     HANDLER(handleMyAssert);
     HANDLER(handleMyPThreadCreate);
-
     HANDLER(handleBeforeMutexLock);
     HANDLER(handleAfterMutexLock);
 
-    //PThread related handlers
-    HANDLER(handlePThreadCreate);
     HANDLER(handlePThreadCreate2); //yqp
     HANDLER(handlePThreadJoin);
     HANDLER(handlePThreadJoin2);
@@ -118,6 +157,7 @@ namespace klee {
     HANDLER(handlePThreadLock);
     HANDLER(handlePThreadUnlock);
     HANDLER(handlePThreadWait);
+
     HANDLER(handlePThreadTimedwait);
     HANDLER(handlePThreadSignal);
     HANDLER(handlePThreadBroadcast);
@@ -128,8 +168,10 @@ namespace klee {
     HANDLER(handlePThreadAttrInit);
     HANDLER(handlePThreadAttrDestroy);
     HANDLER(handlePThreadAttrSetScope);
-	
-	HANDLER(handleAtoi); //yqp
+
+
+
+    HANDLER(handleAtoi); //yqp
     HANDLER(handleConnect); //yqp
     HANDLER(handleSend); //yqp
     HANDLER(handleRecv); //yqp
@@ -160,8 +202,9 @@ namespace klee {
     HANDLER(handleExit0); //yqp
 
 
+
 #undef HANDLER
   };
 } // End klee namespace
 
-#endif
+#endif /* KLEE_SPECIALFUNCTIONHANDLER_H */

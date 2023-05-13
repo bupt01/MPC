@@ -1,0 +1,10 @@
+<PathString> 0
+<readwrite>
+O2 prog2.c@13:S-start-1
+O6 prog2.c@15:R-T1*thread_1_2_i_66659312*0-1-1
+Path: 1
+<path>
+T1:(Eq false
+     (Eq 0
+         (ReadLSB w32 0 T1*thread_1_2_i_66659312*0-1-1)))
+15 0

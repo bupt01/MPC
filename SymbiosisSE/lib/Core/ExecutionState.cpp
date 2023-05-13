@@ -7,33 +7,36 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "Memory.h"
+
 #include "klee/ExecutionState.h"
 
+#include "klee/Expr/Expr.h"
 #include "klee/Internal/Module/Cell.h"
 #include "klee/Internal/Module/InstructionInfoTable.h"
 #include "klee/Internal/Module/KInstruction.h"
 #include "klee/Internal/Module/KModule.h"
+#include "klee/OptionCategories.h"
 
-#include "klee/Expr.h"
-
-#include "Memory.h"
-
-#include "llvm/Function.h"
+#include "llvm/IR/Function.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/raw_ostream.h"
 
-#include <iostream>
-#include <iomanip>
 #include <cassert>
+#include <iomanip>
 #include <map>
 #include <set>
+#include <sstream>
 #include <stdarg.h>
 
 using namespace llvm;
 using namespace klee;
 
-namespace { 
-  cl::opt<bool>
-  DebugLogStateMerge("debug-log-state-merge");
+namespace {
+cl::opt<bool> DebugLogStateMerge(
+    "debug-log-state-merge", cl::init(false),
+    cl::desc("Debug information for underlying state merging (default=false)"),
+    cl::cat(MergeCat));
 }
 
 /***/
@@ -57,7 +60,6 @@ StackFrame::StackFrame(const StackFrame &s)
   for (std::map<llvm::Function*, int>::const_iterator it = s.calledNum.begin(); 
 			  it != s.calledNum.end(); ++it) 
 	calledNum[it->first] = it->second;
-
 }
 
 StackFrame::~StackFrame() { 
@@ -66,94 +68,71 @@ StackFrame::~StackFrame() {
 
 /***/
 
-ExecutionState::ExecutionState(KFunction *kf) 
-  : fakeState(false),
+ExecutionState::ExecutionState(KFunction *kf) :
+    fakeState(false),
     underConstrained(false),
-    depth(0),
-	executedInsts(0),
+
     pc(kf->instructions),
     prevPC(pc),
-    queryCost(0.), 
     weight(1),
+    depth(0),
+    executedInsts(0),
     instsSinceCovNew(0),
     coveredNew(false),
     forkDisabled(false),
-	notStep(false),
     ptreeNode(0),
-	stateId("-1"), goalsReached(0), tmpTrace("") //Nuno
-    {
+    notStep(false),
+    stateId("-1"), goalsReached(0), tmpTrace(""), //Nuno
+    steppedInstructions(0){
   pushFrame(0, kf);
 }
 
-ExecutionState::ExecutionState(const std::vector<ref<Expr> > &assumptions) 
-  : fakeState(true),
-    underConstrained(false),
-	notStep(false),
-	executedInsts(0),
-    constraints(assumptions),
-    queryCost(0.),
-    ptreeNode(0),
-	stateId("-1"), goalsReached(0), tmpTrace("") //Nuno
-    {
-}
+ExecutionState::ExecutionState(const std::vector<ref<Expr> > &assumptions)
+    : constraints(assumptions), ptreeNode(0), executedInsts(0), fakeState(true),underConstrained(false),
+    notStep(false),stateId("-1"), goalsReached(0), tmpTrace("") 
+ {}
 
 ExecutionState::~ExecutionState() {
-  for (unsigned int i=0; i<symbolics.size(); i++)
-  {
-    const MemoryObject *mo = symbolics[i].first;
-    assert(mo->refCount > 0);
-    mo->refCount--;
-    if (mo->refCount == 0) {
-        std::cerr << "delete: " << mo << "\n";
-        mo->getBaseExpr()->dump();
-      delete mo;
-    }
+  for (auto cur_mergehandler: openMergeStack){
+    cur_mergehandler->removeOpenState(this);
   }
 
-  std::cerr << "VVVVVVVV!!!\n";
   while (!stack.empty()) popFrame();
 }
 
-ExecutionState::ExecutionState(const ExecutionState& state)
-  : fnAliases(state.fnAliases),
-    fakeState(state.fakeState),
-    underConstrained(state.underConstrained),
-    depth(state.depth),
+ExecutionState::ExecutionState(const ExecutionState& state):
+    fnAliases(state.fnAliases),//lz
+    fakeState(state.fakeState),//lz
+    underConstrained(state.underConstrained),//lz
     pc(state.pc),
-	tid(state.tid),
-	executedInsts(state.executedInsts),
+    tid(state.tid),
+    executedInsts(state.executedInsts),//lz
     prevPC(state.prevPC),
     stack(state.stack),
-    constraints(state.constraints),
-    queryCost(state.queryCost),
-    weight(state.weight),
+    incomingBBIndex(state.incomingBBIndex),
+    weight(state.weight),//lz
     addressSpace(state.addressSpace),
+    constraints(state.constraints),
+
+    queryCost(state.queryCost),
+    depth(state.depth),
+    shadowObjects(state.shadowObjects),
+    notStep(state.notStep),
     pathOS(state.pathOS),
     symPathOS(state.symPathOS),
+    varaddrnamemap(state.varaddrnamemap),
+    addressToValue(state.addressToValue),
     instsSinceCovNew(state.instsSinceCovNew),
     coveredNew(state.coveredNew),
     forkDisabled(state.forkDisabled),
     coveredLines(state.coveredLines),
     ptreeNode(state.ptreeNode),
     symbolics(state.symbolics),
-	varaddrnamemap(state.varaddrnamemap),
-	addressToValue(state.addressToValue),
     arrayNames(state.arrayNames),
-    shadowObjects(state.shadowObjects),
-	notStep(state.notStep),
-    incomingBBIndex(state.incomingBBIndex),
-	stateId("-1"), goalsReached(0), tmpTrace("") //Nuno
-{
-	for (unsigned int i=0; i<state.symbolics.size(); i++) {
-		state.symbolics[i].first->refCount++;
-		//std::cerr << "11MO to OS: " << " " << state.symbolics[i].first->isGlobal << " " << state.symbolics[i].first << " " << state.symbolics[i].second << "\n";
-	}
-
-  //std::cerr << "create: " << this << " " << &state << "\n";
-  for (unsigned int i=0; i<symbolics.size(); i++) {
-    symbolics[i].first->refCount++;
-	//std::cerr << "MO to OS: " << symbolics[i].first << " " << symbolics[i].second << "\n";
-  }
+    openMergeStack(state.openMergeStack),
+    steppedInstructions(state.steppedInstructions), stateId("-1"), goalsReached(0), tmpTrace("") {
+  for (auto cur_mergehandler: openMergeStack)
+    cur_mergehandler->addOpenState(this);
 }
 
 ExecutionState *ExecutionState::branch() {
@@ -167,6 +146,7 @@ ExecutionState *ExecutionState::branch() {
   falseState->weight -= weight;
 
   return falseState;
+
 }
 
 void ExecutionState::pushFrame(KInstIterator caller, KFunction *kf) {
@@ -181,37 +161,20 @@ void ExecutionState::popFrame() {
   stack.pop_back();
 }
 
-void ExecutionState::addSymbolic(const MemoryObject *mo, const Array *array) { 
-  mo->refCount++;
-  symbolics.push_back(std::make_pair(mo, array));
-}
-///
-
-std::string ExecutionState::getFnAlias(std::string fn) {
-  std::map < std::string, std::string >::iterator it = fnAliases.find(fn);
-  if (it != fnAliases.end())
-    return it->second;
-  else return "";
-}
-
-void ExecutionState::addFnAlias(std::string old_fn, std::string new_fn) {
-  fnAliases[old_fn] = new_fn;
-}
-
-void ExecutionState::removeFnAlias(std::string fn) {
-  fnAliases.erase(fn);
+void ExecutionState::addSymbolic(const MemoryObject *mo, const Array *array) {
+  symbolics.emplace_back(std::make_pair(ref<const MemoryObject>(mo), array));
 }
 
 /**/
 
-std::ostream &klee::operator<<(std::ostream &os, const MemoryMap &mm) {
+llvm::raw_ostream &klee::operator<<(llvm::raw_ostream &os, const MemoryMap &mm) {
   os << "{";
   MemoryMap::iterator it = mm.begin();
   MemoryMap::iterator ie = mm.end();
   if (it!=ie) {
-    os << "MO" << it->first->id << ":" << it->second;
+    os << "MO" << it->first->id << ":" << it->second.get();
     for (++it; it!=ie; ++it)
-      os << ", MO" << it->first->id << ":" << it->second;
+      os << ", MO" << it->first->id << ":" << it->second.get();
   }
   os << "}";
   return os;
@@ -219,14 +182,15 @@ std::ostream &klee::operator<<(std::ostream &os, const MemoryMap &mm) {
 
 bool ExecutionState::merge(const ExecutionState &b) {
   if (DebugLogStateMerge)
-    std::cerr << "-- attempting merge of A:" 
-               << this << " with B:" << &b << "--\n";
+    llvm::errs() << "-- attempting merge of A:" << this << " with B:" << &b
+                 << "--\n";
   if (pc != b.pc)
     return false;
 
   // XXX is it even possible for these to differ? does it matter? probably
   // implies difference in object states?
-  if (symbolics!=b.symbolics)
+
+  if (symbolics != b.symbolics)
     return false;
 
   {
@@ -257,21 +221,24 @@ bool ExecutionState::merge(const ExecutionState &b) {
                       commonConstraints.begin(), commonConstraints.end(),
                       std::inserter(bSuffix, bSuffix.end()));
   if (DebugLogStateMerge) {
-    std::cerr << "\tconstraint prefix: [";
-    for (std::set< ref<Expr> >::iterator it = commonConstraints.begin(), 
-           ie = commonConstraints.end(); it != ie; ++it)
-      std::cerr << *it << ", ";
-    std::cerr << "]\n";
-    std::cerr << "\tA suffix: [";
-    for (std::set< ref<Expr> >::iterator it = aSuffix.begin(), 
-           ie = aSuffix.end(); it != ie; ++it)
-      std::cerr << *it << ", ";
-    std::cerr << "]\n";
-    std::cerr << "\tB suffix: [";
-    for (std::set< ref<Expr> >::iterator it = bSuffix.begin(), 
-           ie = bSuffix.end(); it != ie; ++it)
-      std::cerr << *it << ", ";
-    std::cerr << "]\n";
+    llvm::errs() << "\tconstraint prefix: [";
+    for (std::set<ref<Expr> >::iterator it = commonConstraints.begin(),
+                                        ie = commonConstraints.end();
+         it != ie; ++it)
+      llvm::errs() << *it << ", ";
+    llvm::errs() << "]\n";
+    llvm::errs() << "\tA suffix: [";
+    for (std::set<ref<Expr> >::iterator it = aSuffix.begin(),
+                                        ie = aSuffix.end();
+         it != ie; ++it)
+      llvm::errs() << *it << ", ";
+    llvm::errs() << "]\n";
+    llvm::errs() << "\tB suffix: [";
+    for (std::set<ref<Expr> >::iterator it = bSuffix.begin(),
+                                        ie = bSuffix.end();
+         it != ie; ++it)
+      llvm::errs() << *it << ", ";
+    llvm::errs() << "]\n";
   }
 
   // We cannot merge if addresses would resolve differently in the
@@ -284,9 +251,9 @@ bool ExecutionState::merge(const ExecutionState &b) {
   // and not the other
 
   if (DebugLogStateMerge) {
-    std::cerr << "\tchecking object states\n";
-    std::cerr << "A: " << addressSpace.objects << "\n";
-    std::cerr << "B: " << b.addressSpace.objects << "\n";
+    llvm::errs() << "\tchecking object states\n";
+    llvm::errs() << "A: " << addressSpace.objects << "\n";
+    llvm::errs() << "B: " << b.addressSpace.objects << "\n";
   }
     
   std::set<const MemoryObject*> mutated;
@@ -298,22 +265,22 @@ bool ExecutionState::merge(const ExecutionState &b) {
     if (ai->first != bi->first) {
       if (DebugLogStateMerge) {
         if (ai->first < bi->first) {
-          std::cerr << "\t\tB misses binding for: " << ai->first->id << "\n";
+          llvm::errs() << "\t\tB misses binding for: " << ai->first->id << "\n";
         } else {
-          std::cerr << "\t\tA misses binding for: " << bi->first->id << "\n";
+          llvm::errs() << "\t\tA misses binding for: " << bi->first->id << "\n";
         }
       }
       return false;
     }
-    if (ai->second != bi->second) {
+    if (ai->second.get() != bi->second.get()) {
       if (DebugLogStateMerge)
-        std::cerr << "\t\tmutated: " << ai->first->id << "\n";
+        llvm::errs() << "\t\tmutated: " << ai->first->id << "\n";
       mutated.insert(ai->first);
     }
   }
   if (ai!=ae || bi!=be) {
     if (DebugLogStateMerge)
-      std::cerr << "\t\tmappings differ\n";
+      llvm::errs() << "\t\tmappings differ\n";
     return false;
   }
   
@@ -375,7 +342,7 @@ bool ExecutionState::merge(const ExecutionState &b) {
   return true;
 }
 
-void ExecutionState::dumpStack(std::ostream &out) const {
+void ExecutionState::dumpStack(llvm::raw_ostream &out) const {
   unsigned idx = 0;
   const KInstruction *target = prevPC;
   for (ExecutionState::stack_ty::const_reverse_iterator
@@ -383,22 +350,22 @@ void ExecutionState::dumpStack(std::ostream &out) const {
        it != ie; ++it) {
     const StackFrame &sf = *it;
     Function *f = sf.kf->function;
-	if (f->getNameStr().find("main") != std::string::npos)
-	   continue;
     const InstructionInfo &ii = *target->info;
-    out << "\t#" << idx++ 
-        << " " << std::setw(8) << std::setfill('0') << ii.assemblyLine
-        << " in " << f->getName().str() << " (";
+    out << "\t#" << idx++;
+    std::stringstream AssStream;
+    AssStream << std::setw(8) << std::setfill('0') << ii.assemblyLine;
+    out << AssStream.str();
+    out << " in " << f->getName().str() << " (";
     // Yawn, we could go up and print varargs if we wanted to.
     unsigned index = 0;
-	for (Function::arg_iterator ai = f->arg_begin(), ae = f->arg_end();
+    for (Function::arg_iterator ai = f->arg_begin(), ae = f->arg_end();
          ai != ae; ++ai) {
       if (ai!=f->arg_begin()) out << ", ";
 
       out << ai->getName().str();
       // XXX should go through function
-      ref<Expr> value = sf.locals[sf.kf->getArgRegister(index++)].value; 
-      if (isa<ConstantExpr>(value))
+      ref<Expr> value = sf.locals[sf.kf->getArgRegister(index++)].value;
+      if (value.get() && isa<ConstantExpr>(value))
         out << "=" << value;
     }
     out << ")";
@@ -408,7 +375,6 @@ void ExecutionState::dumpStack(std::ostream &out) const {
     target = sf.caller;
   }
 }
-
 
 //Nuno{
 void ExecutionState::updateStateId(bool branchTaken)

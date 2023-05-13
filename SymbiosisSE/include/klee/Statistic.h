@@ -11,11 +11,7 @@
 #define KLEE_STATISTIC_H
 
 #include "klee/Config/Version.h"
-#if LLVM_VERSION_CODE < LLVM_VERSION(2, 9)
-#include "llvm/System/DataTypes.h"
-#else
 #include "llvm/Support/DataTypes.h"
-#endif
 #include <string>
 
 namespace klee {
@@ -67,5 +63,4 @@ namespace klee {
   };
 }
 
-#endif
-
+#endif /* KLEE_STATISTIC_H */

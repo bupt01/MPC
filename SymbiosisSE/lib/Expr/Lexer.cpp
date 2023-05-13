@@ -7,13 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "expr/Lexer.h"
+#include "klee/Expr/Parser/Lexer.h"
 
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include <iomanip>
-#include <iostream>
 #include <string.h>
 
 using namespace llvm;
@@ -54,7 +53,7 @@ const char *Token::getKindName() const {
 
 void Token::dump() {
   llvm::errs() << "(Token \"" << getKindName() << "\" "
-               << (void*) start << " " << length << " "
+               << (const void*) start << " " << length << " "
                << line << " " << column << ")";
 }
 

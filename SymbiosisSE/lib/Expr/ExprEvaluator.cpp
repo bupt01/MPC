@@ -7,13 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "klee/util/ExprEvaluator.h"
+#include "klee/Expr/ExprEvaluator.h"
 
 using namespace klee;
 
 ExprVisitor::Action ExprEvaluator::evalRead(const UpdateList &ul,
                                             unsigned index) {
-  for (const UpdateNode *un=ul.head; un; un=un->next) {
+  for (auto un = ul.head; !un.isNull(); un = un->next) {
     ref<Expr> ui = visit(un->index);
     
     if (ConstantExpr *CE = dyn_cast<ConstantExpr>(ui)) {
@@ -96,4 +96,13 @@ ExprVisitor::Action ExprEvaluator::visitURem(const URemExpr &e) {
 }
 ExprVisitor::Action ExprEvaluator::visitSRem(const SRemExpr &e) { 
   return protectedDivOperation(e); 
+}
+
+ExprVisitor::Action ExprEvaluator::visitExprPost(const Expr& e) {
+  // When evaluating an assignment we should fold NotOptimizedExpr
+  // nodes so we can fully evaluate.
+  if (e.getKind() == Expr::NotOptimized) {
+    return Action::changeTo(static_cast<const NotOptimizedExpr&>(e).src);
+  }
+  return Action::skipChildren();
 }

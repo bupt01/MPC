@@ -10,10 +10,10 @@
 #ifndef KLEE_ADDRESSSPACE_H
 #define KLEE_ADDRESSSPACE_H
 
-#include "ObjectHolder.h"
-
-#include "klee/Expr.h"
+#include "Memory.h"
+#include "klee/Expr/Expr.h"
 #include "klee/Internal/ADT/ImmutableMap.h"
+#include "klee/Internal/System/Time.h"
 
 namespace klee {
   class ExecutionState;
@@ -30,17 +30,29 @@ namespace klee {
   struct MemoryObjectLT {
     bool operator()(const MemoryObject *a, const MemoryObject *b) const;
   };
-  
-  typedef ImmutableMap<const MemoryObject*, ObjectHolder, MemoryObjectLT> MemoryMap;
-  
+
+  typedef ImmutableMap<const MemoryObject *, ref<ObjectState>, MemoryObjectLT>
+      MemoryMap;
+
   class AddressSpace {
   private:
     /// Epoch counter used to control ownership of objects.
     mutable unsigned cowKey;
 
     /// Unsupported, use copy constructor
-    AddressSpace &operator=(const AddressSpace&); 
-    
+    AddressSpace &operator=(const AddressSpace &);
+
+    /// Check if pointer `p` can point to the memory object in the
+    /// given object pair.  If so, add it to the given resolution list.
+    ///
+    /// \return 1 iff the resolution is incomplete (`maxResolutions`
+    /// is non-zero and it was reached, or a query timed out), 0 iff
+    /// the resolution is complete (`p` can only point to the given
+    /// memory object), and 2 otherwise.
+    int checkPointerInObject(ExecutionState &state, TimingSolver *solver,
+                             ref<Expr> p, const ObjectPair &op,
+                             ResolutionList &rl, unsigned maxResolutions) const;
+
   public:
     /// The MemoryObject -> ObjectState map that constitutes the
     /// address space.
@@ -50,8 +62,7 @@ namespace klee {
     ///
     /// \invariant forall o in objects, o->copyOnWriteOwner <= cowKey
     MemoryMap objects;
-    
-  public:
+
     AddressSpace() : cowKey(1) {}
     AddressSpace(const AddressSpace &b) : cowKey(++b.cowKey), objects(b.objects) { }
     ~AddressSpace() {}
@@ -59,7 +70,7 @@ namespace klee {
     /// Resolve address to an ObjectPair in result.
     /// \return true iff an object was found.
     bool resolveOne(const ref<ConstantExpr> &address, 
-                    ObjectPair &result);
+                    ObjectPair &result) const;
 
     /// Resolve address to an ObjectPair in result.
     ///
@@ -74,20 +85,20 @@ namespace klee {
                     TimingSolver *solver,
                     ref<Expr> address,
                     ObjectPair &result,
-                    bool &success);
+                    bool &success) const;
 
-    /// Resolve address to a list of ObjectPairs it can point to. If
-    /// maxResolutions is non-zero then no more than that many pairs
-    /// will be returned. 
+    /// Resolve pointer `p` to a list of `ObjectPairs` it can point
+    /// to. If `maxResolutions` is non-zero then no more than that many
+    /// pairs will be returned.
     ///
-    /// \return true iff the resolution is incomplete (maxResolutions
-    /// is non-zero and the search terminated early, or a query timed out).
+    /// \return true iff the resolution is incomplete (`maxResolutions`
+    /// is non-zero and it was reached, or a query timed out).
     bool resolve(ExecutionState &state,
                  TimingSolver *solver,
-                 ref<Expr> address, 
+                 ref<Expr> p,
                  ResolutionList &rl, 
                  unsigned maxResolutions=0,
-                 double timeout=0.);
+                 time::Span timeout=time::Span()) const;
 
     /***/
 
@@ -125,7 +136,16 @@ namespace klee {
     /// \retval true The copy succeeded. 
     /// \retval false The copy failed because a read-only object was modified.
     bool copyInConcretes();
+
+    /// Updates the memory object with the raw memory from the address
+    ///
+    /// @param mo The MemoryObject to update
+    /// @param os The associated memory state containing the actual data
+    /// @param src_address the address to copy from
+    /// @return
+    bool copyInConcrete(const MemoryObject *mo, const ObjectState *os,
+                        uint64_t src_address);
   };
 } // End klee namespace
 
-#endif
+#endif /* KLEE_ADDRESSSPACE_H */

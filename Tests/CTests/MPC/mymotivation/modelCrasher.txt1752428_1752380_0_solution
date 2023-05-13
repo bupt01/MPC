@@ -1,0 +1,13 @@
+MEMORY-ORDER CONSTRAINTS -----
+(error "line 4 column 18: invalid function application, arguments missing")
+READ-WRITE CONSTRAINTS WITH SIMPLIFY -----
+PATH CONSTRAINTS -----
+LOCKING CONSTRAINTS -----
+FORK-START CONSTRAINTS -----
+JOIN-EXIT CONSTRAINTS -----
+WAIT-SIGNAL CONSTRAINTS -----
+sat
+(model 
+)
+(error "line 27 column 15: unsat core is not available")
+end

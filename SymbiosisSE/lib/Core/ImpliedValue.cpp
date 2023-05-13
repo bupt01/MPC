@@ -10,15 +10,13 @@
 #include "ImpliedValue.h"
 
 #include "Context.h"
-#include "klee/Constraints.h"
-#include "klee/Expr.h"
-#include "klee/Solver.h"
-// FIXME: Use APInt.
-#include "klee/Internal/Support/IntEvaluation.h"
 
-#include "klee/util/ExprUtil.h"
+#include "klee/Expr/Constraints.h"
+#include "klee/Expr/Expr.h"
+#include "klee/Expr/ExprUtil.h"
+#include "klee/Internal/Support/IntEvaluation.h" // FIXME: Use APInt
+#include "klee/Solver/Solver.h"
 
-#include <iostream>
 #include <map>
 #include <set>
 
@@ -232,7 +230,7 @@ void ImpliedValue::checkForImpliedValues(Solver *S, ref<Expr> e,
          ie = reads.end(); i != ie; ++i) {
     ref<ReadExpr> var = *i;
     ref<ConstantExpr> possible;
-    bool success = S->getValue(Query(assume, var), possible);
+    bool success = S->getValue(Query(assume, var), possible); (void) success;
     assert(success && "FIXME: Unhandled solver failure");    
     std::map<ref<ReadExpr>, ref<ConstantExpr> >::iterator it = found.find(var);
     bool res;
@@ -246,7 +244,7 @@ void ImpliedValue::checkForImpliedValues(Solver *S, ref<Expr> e,
     } else {
       if (it!=found.end()) {
         ref<Expr> binding = it->second;
-        std::cerr << "checkForImpliedValues: " << e  << " = " << value << "\n"
+        llvm::errs() << "checkForImpliedValues: " << e  << " = " << value << "\n"
                   << "\t\t implies " << var << " == " << binding
                   << " (error)\n";
         assert(0);

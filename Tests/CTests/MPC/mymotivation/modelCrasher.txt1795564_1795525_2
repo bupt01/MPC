@@ -1,0 +1,161 @@
+(set-option :produce-unsat-cores true)
+(echo "MEMORY-ORDER CONSTRAINTS -----")
+
+(declare-const OR-T0*main_ret*pthread_create1__66659256*0-0-0&prog2.c@57 Int)
+(assert (>= OR-T0*main_ret*pthread_create1__66659256*0-0-0&prog2.c@57 0))
+(assert (<= OR-T0*main_ret*pthread_create1__66659256*0-0-0&prog2.c@57 22))
+(declare-const OS-fork_1-0-0&prog2.c@57 Int)
+(assert (>= OS-fork_1-0-0&prog2.c@57 0))
+(assert (<= OS-fork_1-0-0&prog2.c@57 22))
+(declare-const OR-T0*main_ret*pthread_create2__66659336*0-0-0&prog2.c@58 Int)
+(assert (>= OR-T0*main_ret*pthread_create2__66659336*0-0-0&prog2.c@58 0))
+(assert (<= OR-T0*main_ret*pthread_create2__66659336*0-0-0&prog2.c@58 22))
+(declare-const OS-fork_2-0-0&prog2.c@58 Int)
+(assert (>= OS-fork_2-0-0&prog2.c@58 0))
+(assert (<= OS-fork_2-0-0&prog2.c@58 22))
+(declare-const OS-join_1-0-0&prog2.c@129 Int)
+(assert (>= OS-join_1-0-0&prog2.c@129 0))
+(assert (<= OS-join_1-0-0&prog2.c@129 22))
+(declare-const OS-join_2-0-0&prog2.c@130 Int)
+(assert (>= OS-join_2-0-0&prog2.c@130 0))
+(assert (<= OS-join_2-0-0&prog2.c@130 22))
+(declare-const OS-exit-0&prog2.c@131 Int)
+(assert (>= OS-exit-0&prog2.c@131 0))
+(assert (<= OS-exit-0&prog2.c@131 22))
+(assert (! (< OR-T0*main_ret*pthread_create1__66659256*0-0-0&prog2.c@57 OS-fork_1-0-0&prog2.c@57 OR-T0*main_ret*pthread_create2__66659336*0-0-0&prog2.c@58 OS-fork_2-0-0&prog2.c@58 OS-join_1-0-0&prog2.c@129 OS-join_2-0-0&prog2.c@130 OS-exit-0&prog2.c@131):named MO0))
+
+(declare-const OS-start-1&prog2.c@13 Int)
+(assert (>= OS-start-1&prog2.c@13 0))
+(assert (<= OS-start-1&prog2.c@13 22))
+(declare-const OR-T1*thread_1_2_i_66659312*0-1-1&prog2.c@15 Int)
+(assert (>= OR-T1*thread_1_2_i_66659312*0-1-1&prog2.c@15 0))
+(assert (<= OR-T1*thread_1_2_i_66659312*0-1-1&prog2.c@15 22))
+(declare-const OS-exit-1&prog2.c@16 Int)
+(assert (>= OS-exit-1&prog2.c@16 0))
+(assert (<= OS-exit-1&prog2.c@16 22))
+(assert (! (< OS-start-1&prog2.c@13 OR-T1*thread_1_2_i_66659312*0-1-1&prog2.c@15 OS-exit-1&prog2.c@16):named MO1))
+
+(declare-const OS-start-2&prog2.c@26 Int)
+(assert (>= OS-start-2&prog2.c@26 0))
+(assert (<= OS-start-2&prog2.c@26 22))
+(declare-const OR-T2*thread_2_3_ret*pthread_mutex_lock1__66659472*0-2-0&prog2.c@29 Int)
+(assert (>= OR-T2*thread_2_3_ret*pthread_mutex_lock1__66659472*0-2-0&prog2.c@29 0))
+(assert (<= OR-T2*thread_2_3_ret*pthread_mutex_lock1__66659472*0-2-0&prog2.c@29 22))
+(declare-const OS-lock_0x40d2420l-2-0&prog2.c@28 Int)
+(assert (>= OS-lock_0x40d2420l-2-0&prog2.c@28 0))
+(assert (<= OS-lock_0x40d2420l-2-0&prog2.c@28 22))
+(declare-const OR-T2*thread_2_3_ret*pthread_mutex_lock2__66659504*0-2-0&prog2.c@30 Int)
+(assert (>= OR-T2*thread_2_3_ret*pthread_mutex_lock2__66659504*0-2-0&prog2.c@30 0))
+(assert (<= OR-T2*thread_2_3_ret*pthread_mutex_lock2__66659504*0-2-0&prog2.c@30 22))
+(declare-const OS-lock_0x40d2400l-2-0&prog2.c@29 Int)
+(assert (>= OS-lock_0x40d2400l-2-0&prog2.c@29 0))
+(assert (<= OS-lock_0x40d2400l-2-0&prog2.c@29 22))
+(declare-const OR-T0*main_shared*x_66667624*8-2-0&prog2.c@31 Int)
+(assert (>= OR-T0*main_shared*x_66667624*8-2-0&prog2.c@31 0))
+(assert (<= OR-T0*main_shared*x_66667624*8-2-0&prog2.c@31 22))
+(declare-const OR-T0*main_shared*x_66667628*12-2-0&prog2.c@32 Int)
+(assert (>= OR-T0*main_shared*x_66667628*12-2-0&prog2.c@32 0))
+(assert (<= OR-T0*main_shared*x_66667628*12-2-0&prog2.c@32 22))
+(declare-const OW-T0*main_shared*x_66667628*12-2-0&prog2.c@32 Int)
+(assert (>= OW-T0*main_shared*x_66667628*12-2-0&prog2.c@32 0))
+(assert (<= OW-T0*main_shared*x_66667628*12-2-0&prog2.c@32 22))
+(declare-const OR-T0*main_shared*x_66667624*8-2-1&prog2.c@33 Int)
+(assert (>= OR-T0*main_shared*x_66667624*8-2-1&prog2.c@33 0))
+(assert (<= OR-T0*main_shared*x_66667624*8-2-1&prog2.c@33 22))
+(declare-const OS-unlock_0x40d2400l-2-0&prog2.c@35 Int)
+(assert (>= OS-unlock_0x40d2400l-2-0&prog2.c@35 0))
+(assert (<= OS-unlock_0x40d2400l-2-0&prog2.c@35 22))
+(declare-const OS-unlock_0x40d2420l-2-0&prog2.c@36 Int)
+(assert (>= OS-unlock_0x40d2420l-2-0&prog2.c@36 0))
+(assert (<= OS-unlock_0x40d2420l-2-0&prog2.c@36 22))
+(declare-const OS-exit-2&prog2.c@37 Int)
+(assert (>= OS-exit-2&prog2.c@37 0))
+(assert (<= OS-exit-2&prog2.c@37 22))
+(assert (! (< OS-start-2&prog2.c@26 OR-T2*thread_2_3_ret*pthread_mutex_lock1__66659472*0-2-0&prog2.c@29 OS-lock_0x40d2420l-2-0&prog2.c@28 OR-T2*thread_2_3_ret*pthread_mutex_lock2__66659504*0-2-0&prog2.c@30 OS-lock_0x40d2400l-2-0&prog2.c@29 OR-T0*main_shared*x_66667624*8-2-0&prog2.c@31 OR-T0*main_shared*x_66667628*12-2-0&prog2.c@32 OW-T0*main_shared*x_66667628*12-2-0&prog2.c@32 OR-T0*main_shared*x_66667624*8-2-1&prog2.c@33 OS-unlock_0x40d2400l-2-0&prog2.c@35 OS-unlock_0x40d2420l-2-0&prog2.c@36 OS-exit-2&prog2.c@37):named MO2))
+
+(assert (distinct  OR-T0*main_ret*pthread_create1__66659256*0-0-0&prog2.c@57 OS-fork_1-0-0&prog2.c@57 OR-T0*main_ret*pthread_create2__66659336*0-0-0&prog2.c@58 OS-fork_2-0-0&prog2.c@58 OS-join_1-0-0&prog2.c@129 OS-join_2-0-0&prog2.c@130 OS-exit-0&prog2.c@131 OS-start-1&prog2.c@13 OR-T1*thread_1_2_i_66659312*0-1-1&prog2.c@15 OS-exit-1&prog2.c@16 OS-start-2&prog2.c@26 OR-T2*thread_2_3_ret*pthread_mutex_lock1__66659472*0-2-0&prog2.c@29 OS-lock_0x40d2420l-2-0&prog2.c@28 OR-T2*thread_2_3_ret*pthread_mutex_lock2__66659504*0-2-0&prog2.c@30 OS-lock_0x40d2400l-2-0&prog2.c@29 OR-T0*main_shared*x_66667624*8-2-0&prog2.c@31 OR-T0*main_shared*x_66667628*12-2-0&prog2.c@32 OW-T0*main_shared*x_66667628*12-2-0&prog2.c@32 OR-T0*main_shared*x_66667624*8-2-1&prog2.c@33 OS-unlock_0x40d2400l-2-0&prog2.c@35 OS-unlock_0x40d2420l-2-0&prog2.c@36 OS-exit-2&prog2.c@37))
+
+
+(echo "READ-WRITE CONSTRAINTS WITH SIMPLIFY -----")
+
+(declare-const R-T0*main_ret*pthread_create1__66659256*0-0-0 Int)
+
+(declare-const R-T0*main_ret*pthread_create2__66659336*0-0-0 Int)
+
+(declare-const R-T0*main_shared*x_66667624*8-2-0 Int)
+
+(declare-const R-T0*main_shared*x_66667624*8-2-1 Int)
+
+(declare-const R-T0*main_shared*x_66667628*12-2-0 Int)
+
+(declare-const R-T1*thread_1_2_i_66659312*0-1-1 Int)
+
+(declare-const R-T2*thread_2_3_ret*pthread_mutex_lock1__66659472*0-2-0 Int)
+
+(declare-const R-T2*thread_2_3_ret*pthread_mutex_lock2__66659504*0-2-0 Int)
+
+(declare-const InitR-T0*main_ret*pthread_create1__66659256*0 Int)
+
+(assert (! (or (and (= R-T0*main_ret*pthread_create1__66659256*0-0-0 InitR-T0*main_ret*pthread_create1__66659256*0))):named RWC0))
+
+(declare-const InitR-T0*main_ret*pthread_create2__66659336*0 Int)
+
+(assert (! (or (and (= R-T0*main_ret*pthread_create2__66659336*0-0-0 InitR-T0*main_ret*pthread_create2__66659336*0))):named RWC1))
+
+(declare-const InitR-T0*main_shared*x_66667624*8 Int)
+
+(assert (! (or (and (= R-T0*main_shared*x_66667624*8-2-0 InitR-T0*main_shared*x_66667624*8))):named RWC2))
+
+(assert (! (or (and (= R-T0*main_shared*x_66667624*8-2-1 InitR-T0*main_shared*x_66667624*8))):named RWC3))
+
+(declare-const InitR-T0*main_shared*x_66667628*12 Int)
+
+(assert (! (or (and (= R-T0*main_shared*x_66667628*12-2-0 InitR-T0*main_shared*x_66667628*12))):named RWC4))
+
+(declare-const InitR-T1*thread_1_2_i_66659312*0 Int)
+
+(assert (! (or (and (= R-T1*thread_1_2_i_66659312*0-1-1 InitR-T1*thread_1_2_i_66659312*0))):named RWC5))
+
+(declare-const InitR-T2*thread_2_3_ret*pthread_mutex_lock1__66659472*0 Int)
+
+(assert (! (or (and (= R-T2*thread_2_3_ret*pthread_mutex_lock1__66659472*0-2-0 InitR-T2*thread_2_3_ret*pthread_mutex_lock1__66659472*0))):named RWC6))
+
+(declare-const InitR-T2*thread_2_3_ret*pthread_mutex_lock2__66659504*0 Int)
+
+(assert (! (or (and (= R-T2*thread_2_3_ret*pthread_mutex_lock2__66659504*0-2-0 InitR-T2*thread_2_3_ret*pthread_mutex_lock2__66659504*0))):named RWC7))
+
+(echo "PATH CONSTRAINTS -----")
+
+(assert (! (= false (= 0 R-T1*thread_1_2_i_66659312*0-1-1)):named PC0_T1))
+
+(assert (! (= false (= R-T0*main_shared*x_66667624*8-2-0 R-T0*main_shared*x_66667624*8-2-1)):named PC1_T2))
+
+(echo "LOCKING CONSTRAINTS -----")
+
+
+(echo "FORK-START CONSTRAINTS -----")
+
+(assert (! (< OS-fork_1-0-0&prog2.c@57 OS-start-1&prog2.c@13):named FSC0))
+
+(assert (! (< OS-fork_2-0-0&prog2.c@58 OS-start-2&prog2.c@26):named FSC1))
+
+
+(echo "JOIN-EXIT CONSTRAINTS -----")
+
+(assert (! (> OS-join_1-0-0&prog2.c@129 OS-exit-1&prog2.c@16):named JEC0))
+
+(assert (! (> OS-join_2-0-0&prog2.c@130 OS-exit-2&prog2.c@37):named JEC1))
+
+
+(echo "WAIT-SIGNAL CONSTRAINTS -----")
+
+
+(check-sat)
+
+(get-model)
+
+(get-unsat-core)
+
+(echo "end")
+(reset)
+

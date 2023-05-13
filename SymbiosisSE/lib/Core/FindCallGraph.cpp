@@ -7,11 +7,11 @@
 //
 
 #include "FindCallGraph.h"
-#include "llvm/Support/InstIterator.h"
-//#include "llvm/IR/Module.h"
-#include "llvm/Module.h"
+#include "llvm/IR/InstIterator.h"
+#include "llvm/IR/Module.h"
+//#include "llvm/Module.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/CFG.h"
+#include "llvm/IR/CFG.h"
 #include <cstdio>
 #include <iostream>
 
@@ -42,24 +42,25 @@ void FindCallGraph::findAllCallers( Module &M){
             {
                 Function *OtherF = NULL;
                 
-                CallInst *CI = dyn_cast<CallInst>(ii);
+                //CallInst *CI = dyn_cast<CallInst>(&*ii);
+                CallBase *CI = dyn_cast<CallBase>(&*ii);
                 if( CI != NULL ) {
                     
                     OtherF = CI->getCalledFunction();
                     
                 }
                 
-                InvokeInst *II = dyn_cast<InvokeInst>(ii);
-                if( II != NULL ) {
-                    OtherF = II->getCalledFunction();
-                }
+                // InvokeInst *II = dyn_cast<InvokeInst>(&*ii);
+                // if( II != NULL ) {
+                //     OtherF = II->getCalledFunction();
+                // }
                 
                 if( OtherF != NULL ){
                     if( callersOf.find(OtherF) == callersOf.end() ){
                         callersOf[OtherF] = std::set<Function *>();
                     }
                     
-                    callersOf[OtherF].insert(fi);
+                    callersOf[OtherF].insert(&*fi);
                 }
             }
         }
@@ -78,7 +79,7 @@ bool FindCallGraph::runOnModule (Module &M)
 void FindCallGraph::getAnalysisUsage (AnalysisUsage &AU) const
 {
     /*Modifies the CFG!*/
-    AU.addRequired<CallGraph>();
+    //AU.addRequired<CallGraph>();
 }
 
 bool FindCallGraph::doFinalization (Module &M)
@@ -86,11 +87,11 @@ bool FindCallGraph::doFinalization (Module &M)
     return false;
 }
 
-const char *FindCallGraph::getPassName () const {
-    return "Symbiosis Call Graph Analysis";
+llvm::StringRef FindCallGraph::getPassName () const {
+    return  llvm::StringRef("Symbiosis Call Graph Analysis");
 }
 
-char FindCallGraph::ID = 0;
+//char FindCallGraph::ID = 0;
 
 /*ModulePass *llvm::createFindCallGraph() {
     return new FindCallGraph();

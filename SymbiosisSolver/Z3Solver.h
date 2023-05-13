@@ -39,10 +39,12 @@ class Z3Solver {
     //general functions
     bool solve();
     bool solve_yqp();
+    bool solve_lz();
     bool solveWithSolution(std::vector<std::string> solution, bool invertBugCond);
     void closeZ3();
     bool checkSat();
     bool checkSat_yqp();
+    bool checkSat_lz();
     std::string readLinePipe();
     void openOutputFile();
     void openInputFile();

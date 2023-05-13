@@ -10,15 +10,16 @@
 #ifndef KLEE_CELL_H
 #define KLEE_CELL_H
 
-#include <klee/Expr.h>
+#include "klee/Expr/Expr.h"
 
 namespace klee {
   class MemoryObject;
 
   struct Cell {
     ref<Expr> value;
-    ref<Expr> value1;
+    ref<Expr> value1;//lz
+
   };
 }
 
-#endif
+#endif /* KLEE_CELL_H */

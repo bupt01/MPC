@@ -1,0 +1,202 @@
+(set-option :produce-unsat-cores true)
+(echo "MEMORY-ORDER CONSTRAINTS -----")
+
+(declare-const OW-T0*main_shared*x_69379872*0-0-0&M0.c@113 Int)
+(assert (>= OW-T0*main_shared*x_69379872*0-0-0&M0.c@113 0))
+(assert (<= OW-T0*main_shared*x_69379872*0-0-0&M0.c@113 31))
+(declare-const OW-T0*main_shared*y_69379888*0-0-0&M0.c@113 Int)
+(assert (>= OW-T0*main_shared*y_69379888*0-0-0&M0.c@113 0))
+(assert (<= OW-T0*main_shared*y_69379888*0-0-0&M0.c@113 31))
+(declare-const OR-T0*main_ret*pthread_create1__69380224*0-0-0&M0.c@115 Int)
+(assert (>= OR-T0*main_ret*pthread_create1__69380224*0-0-0&M0.c@115 0))
+(assert (<= OR-T0*main_ret*pthread_create1__69380224*0-0-0&M0.c@115 31))
+(declare-const OS-fork_1-0-0&M0.c@115 Int)
+(assert (>= OS-fork_1-0-0&M0.c@115 0))
+(assert (<= OS-fork_1-0-0&M0.c@115 31))
+(declare-const OR-T0*main_ret*pthread_create2__69380280*0-0-0&M0.c@116 Int)
+(assert (>= OR-T0*main_ret*pthread_create2__69380280*0-0-0&M0.c@116 0))
+(assert (<= OR-T0*main_ret*pthread_create2__69380280*0-0-0&M0.c@116 31))
+(declare-const OS-fork_2-0-0&M0.c@116 Int)
+(assert (>= OS-fork_2-0-0&M0.c@116 0))
+(assert (<= OS-fork_2-0-0&M0.c@116 31))
+(declare-const OR-T0*main_ret*pthread_create3__69380336*0-0-0&M0.c@117 Int)
+(assert (>= OR-T0*main_ret*pthread_create3__69380336*0-0-0&M0.c@117 0))
+(assert (<= OR-T0*main_ret*pthread_create3__69380336*0-0-0&M0.c@117 31))
+(declare-const OS-fork_3-0-0&M0.c@117 Int)
+(assert (>= OS-fork_3-0-0&M0.c@117 0))
+(assert (<= OS-fork_3-0-0&M0.c@117 31))
+(declare-const OS-join_1-0-0&M0.c@129 Int)
+(assert (>= OS-join_1-0-0&M0.c@129 0))
+(assert (<= OS-join_1-0-0&M0.c@129 31))
+(declare-const OS-join_2-0-0&M0.c@130 Int)
+(assert (>= OS-join_2-0-0&M0.c@130 0))
+(assert (<= OS-join_2-0-0&M0.c@130 31))
+(declare-const OS-join_2-0-0&M0.c@131 Int)
+(assert (>= OS-join_2-0-0&M0.c@131 0))
+(assert (<= OS-join_2-0-0&M0.c@131 31))
+(declare-const OS-exit-0&M0.c@132 Int)
+(assert (>= OS-exit-0&M0.c@132 0))
+(assert (<= OS-exit-0&M0.c@132 31))
+(assert (! (< OW-T0*main_shared*x_69379872*0-0-0&M0.c@113 OW-T0*main_shared*y_69379888*0-0-0&M0.c@113 OR-T0*main_ret*pthread_create1__69380224*0-0-0&M0.c@115 OS-fork_1-0-0&M0.c@115 OR-T0*main_ret*pthread_create2__69380280*0-0-0&M0.c@116 OS-fork_2-0-0&M0.c@116 OR-T0*main_ret*pthread_create3__69380336*0-0-0&M0.c@117 OS-fork_3-0-0&M0.c@117 OS-join_1-0-0&M0.c@129 OS-join_2-0-0&M0.c@130 OS-join_2-0-0&M0.c@131 OS-exit-0&M0.c@132):named MO0))
+
+(declare-const OS-start-1&M0.c@16 Int)
+(assert (>= OS-start-1&M0.c@16 0))
+(assert (<= OS-start-1&M0.c@16 31))
+(declare-const OW-T0*main_shared*x_69379872*0-1-0&M0.c@18 Int)
+(assert (>= OW-T0*main_shared*x_69379872*0-1-0&M0.c@18 0))
+(assert (<= OW-T0*main_shared*x_69379872*0-1-0&M0.c@18 31))
+(declare-const OW-T0*main_shared*y_69379888*0-1-0&M0.c@19 Int)
+(assert (>= OW-T0*main_shared*y_69379888*0-1-0&M0.c@19 0))
+(assert (<= OW-T0*main_shared*y_69379888*0-1-0&M0.c@19 31))
+(declare-const OR-T1*testT1_i_69380504*0-1-1&M0.c@20 Int)
+(assert (>= OR-T1*testT1_i_69380504*0-1-1&M0.c@20 0))
+(assert (<= OR-T1*testT1_i_69380504*0-1-1&M0.c@20 31))
+(declare-const OS-lock_0x4331f60lock-1-0&M0.c@21 Int)
+(assert (>= OS-lock_0x4331f60lock-1-0&M0.c@21 0))
+(assert (<= OS-lock_0x4331f60lock-1-0&M0.c@21 31))
+(declare-const OS-unlock_0x4331f60lock-1-0&M0.c@24 Int)
+(assert (>= OS-unlock_0x4331f60lock-1-0&M0.c@24 0))
+(assert (<= OS-unlock_0x4331f60lock-1-0&M0.c@24 31))
+(declare-const OS-exit-1&M0.c@25 Int)
+(assert (>= OS-exit-1&M0.c@25 0))
+(assert (<= OS-exit-1&M0.c@25 31))
+(assert (! (< OS-start-1&M0.c@16 OW-T0*main_shared*x_69379872*0-1-0&M0.c@18 OW-T0*main_shared*y_69379888*0-1-0&M0.c@19 OR-T1*testT1_i_69380504*0-1-1&M0.c@20 OS-lock_0x4331f60lock-1-0&M0.c@21 OS-unlock_0x4331f60lock-1-0&M0.c@24 OS-exit-1&M0.c@25):named MO1))
+
+(declare-const OS-start-2&M0.c@39 Int)
+(assert (>= OS-start-2&M0.c@39 0))
+(assert (<= OS-start-2&M0.c@39 31))
+(declare-const OW-T0*main_shared*x_69379872*0-2-0&M0.c@40 Int)
+(assert (>= OW-T0*main_shared*x_69379872*0-2-0&M0.c@40 0))
+(assert (<= OW-T0*main_shared*x_69379872*0-2-0&M0.c@40 31))
+(declare-const OR-T2*testT2_j_69380448*0-2-1&M0.c@42 Int)
+(assert (>= OR-T2*testT2_j_69380448*0-2-1&M0.c@42 0))
+(assert (<= OR-T2*testT2_j_69380448*0-2-1&M0.c@42 31))
+(declare-const OR-T2*testT2_j_69380448*0-2-2&M0.c@44 Int)
+(assert (>= OR-T2*testT2_j_69380448*0-2-2&M0.c@44 0))
+(assert (<= OR-T2*testT2_j_69380448*0-2-2&M0.c@44 31))
+(declare-const OS-lock_0x4331f60lock-2-0&M0.c@44 Int)
+(assert (>= OS-lock_0x4331f60lock-2-0&M0.c@44 0))
+(assert (<= OS-lock_0x4331f60lock-2-0&M0.c@44 31))
+(declare-const OS-unlock_0x4331f60lock-2-0&M0.c@47 Int)
+(assert (>= OS-unlock_0x4331f60lock-2-0&M0.c@47 0))
+(assert (<= OS-unlock_0x4331f60lock-2-0&M0.c@47 31))
+(declare-const OS-exit-2&M0.c@45 Int)
+(assert (>= OS-exit-2&M0.c@45 0))
+(assert (<= OS-exit-2&M0.c@45 31))
+(assert (! (< OS-start-2&M0.c@39 OW-T0*main_shared*x_69379872*0-2-0&M0.c@40 OR-T2*testT2_j_69380448*0-2-1&M0.c@42 OR-T2*testT2_j_69380448*0-2-2&M0.c@44 OS-lock_0x4331f60lock-2-0&M0.c@44 OS-unlock_0x4331f60lock-2-0&M0.c@47 OS-exit-2&M0.c@45):named MO2))
+
+(declare-const OS-start-3&M0.c@29 Int)
+(assert (>= OS-start-3&M0.c@29 0))
+(assert (<= OS-start-3&M0.c@29 31))
+(declare-const OW-T0*main_shared*x_69379872*0-3-0&M0.c@30 Int)
+(assert (>= OW-T0*main_shared*x_69379872*0-3-0&M0.c@30 0))
+(assert (<= OW-T0*main_shared*x_69379872*0-3-0&M0.c@30 31))
+(declare-const OW-T0*main_shared*y_69379888*0-3-0&M0.c@31 Int)
+(assert (>= OW-T0*main_shared*y_69379888*0-3-0&M0.c@31 0))
+(assert (<= OW-T0*main_shared*y_69379888*0-3-0&M0.c@31 31))
+(declare-const OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 Int)
+(assert (>= OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 0))
+(assert (<= OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 31))
+(declare-const OS-exit-3&M0.c@33 Int)
+(assert (>= OS-exit-3&M0.c@33 0))
+(assert (<= OS-exit-3&M0.c@33 31))
+(assert (! (< OS-start-3&M0.c@29 OW-T0*main_shared*x_69379872*0-3-0&M0.c@30 OW-T0*main_shared*y_69379888*0-3-0&M0.c@31 OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OS-exit-3&M0.c@33):named MO3))
+
+(assert (distinct  OW-T0*main_shared*x_69379872*0-0-0&M0.c@113 OW-T0*main_shared*y_69379888*0-0-0&M0.c@113 OR-T0*main_ret*pthread_create1__69380224*0-0-0&M0.c@115 OS-fork_1-0-0&M0.c@115 OR-T0*main_ret*pthread_create2__69380280*0-0-0&M0.c@116 OS-fork_2-0-0&M0.c@116 OR-T0*main_ret*pthread_create3__69380336*0-0-0&M0.c@117 OS-fork_3-0-0&M0.c@117 OS-join_1-0-0&M0.c@129 OS-join_2-0-0&M0.c@130 OS-join_2-0-0&M0.c@131 OS-exit-0&M0.c@132 OS-start-1&M0.c@16 OW-T0*main_shared*x_69379872*0-1-0&M0.c@18 OW-T0*main_shared*y_69379888*0-1-0&M0.c@19 OR-T1*testT1_i_69380504*0-1-1&M0.c@20 OS-lock_0x4331f60lock-1-0&M0.c@21 OS-unlock_0x4331f60lock-1-0&M0.c@24 OS-exit-1&M0.c@25 OS-start-2&M0.c@39 OW-T0*main_shared*x_69379872*0-2-0&M0.c@40 OR-T2*testT2_j_69380448*0-2-1&M0.c@42 OR-T2*testT2_j_69380448*0-2-2&M0.c@44 OS-lock_0x4331f60lock-2-0&M0.c@44 OS-unlock_0x4331f60lock-2-0&M0.c@47 OS-exit-2&M0.c@45 OS-start-3&M0.c@29 OW-T0*main_shared*x_69379872*0-3-0&M0.c@30 OW-T0*main_shared*y_69379888*0-3-0&M0.c@31 OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OS-exit-3&M0.c@33))
+
+
+(echo "READ-WRITE CONSTRAINTS WITH SIMPLIFY -----")
+
+(declare-const R-T0*main_ret*pthread_create1__69380224*0-0-0 Int)
+
+(declare-const R-T0*main_ret*pthread_create2__69380280*0-0-0 Int)
+
+(declare-const R-T0*main_ret*pthread_create3__69380336*0-0-0 Int)
+
+(declare-const R-T0*main_shared*x_69379872*0-3-1 Int)
+
+(declare-const R-T1*testT1_i_69380504*0-1-1 Int)
+
+(declare-const R-T2*testT2_j_69380448*0-2-1 Int)
+
+(declare-const R-T2*testT2_j_69380448*0-2-2 Int)
+
+(declare-const InitR-T0*main_ret*pthread_create1__69380224*0 Int)
+
+(assert (! (or (and (= R-T0*main_ret*pthread_create1__69380224*0-0-0 InitR-T0*main_ret*pthread_create1__69380224*0))):named RWC0))
+
+(declare-const InitR-T0*main_ret*pthread_create2__69380280*0 Int)
+
+(assert (! (or (and (= R-T0*main_ret*pthread_create2__69380280*0-0-0 InitR-T0*main_ret*pthread_create2__69380280*0))):named RWC1))
+
+(declare-const InitR-T0*main_ret*pthread_create3__69380336*0 Int)
+
+(assert (! (or (and (= R-T0*main_ret*pthread_create3__69380336*0-0-0 InitR-T0*main_ret*pthread_create3__69380336*0))):named RWC2))
+
+(declare-const InitR-T0*main_shared*x_69379872*0 Int)
+
+(assert (! (or (and (= R-T0*main_shared*x_69379872*0-3-1 InitR-T0*main_shared*x_69379872*0) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-1-0&M0.c@18) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-2-0&M0.c@40) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-3-0&M0.c@30) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-0-0&M0.c@113))
+ (and (= R-T0*main_shared*x_69379872*0-3-1 2) (< OW-T0*main_shared*x_69379872*0-1-0&M0.c@18 OR-T0*main_shared*x_69379872*0-3-1&M0.c@32) (or (< OW-T0*main_shared*x_69379872*0-2-0&M0.c@40 OW-T0*main_shared*x_69379872*0-1-0&M0.c@18) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-2-0&M0.c@40)) (or (< OW-T0*main_shared*x_69379872*0-3-0&M0.c@30 OW-T0*main_shared*x_69379872*0-1-0&M0.c@18) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-3-0&M0.c@30)) (or (< OW-T0*main_shared*x_69379872*0-0-0&M0.c@113 OW-T0*main_shared*x_69379872*0-1-0&M0.c@18) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-0-0&M0.c@113)))
+ (and (= R-T0*main_shared*x_69379872*0-3-1 100) (< OW-T0*main_shared*x_69379872*0-2-0&M0.c@40 OR-T0*main_shared*x_69379872*0-3-1&M0.c@32) (or (< OW-T0*main_shared*x_69379872*0-1-0&M0.c@18 OW-T0*main_shared*x_69379872*0-2-0&M0.c@40) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-1-0&M0.c@18)) (or (< OW-T0*main_shared*x_69379872*0-3-0&M0.c@30 OW-T0*main_shared*x_69379872*0-2-0&M0.c@40) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-3-0&M0.c@30)) (or (< OW-T0*main_shared*x_69379872*0-0-0&M0.c@113 OW-T0*main_shared*x_69379872*0-2-0&M0.c@40) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-0-0&M0.c@113)))
+ (and (= R-T0*main_shared*x_69379872*0-3-1 5) (< OW-T0*main_shared*x_69379872*0-3-0&M0.c@30 OR-T0*main_shared*x_69379872*0-3-1&M0.c@32) (or (< OW-T0*main_shared*x_69379872*0-1-0&M0.c@18 OW-T0*main_shared*x_69379872*0-3-0&M0.c@30) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-1-0&M0.c@18)) (or (< OW-T0*main_shared*x_69379872*0-2-0&M0.c@40 OW-T0*main_shared*x_69379872*0-3-0&M0.c@30) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-2-0&M0.c@40)) (or (< OW-T0*main_shared*x_69379872*0-0-0&M0.c@113 OW-T0*main_shared*x_69379872*0-3-0&M0.c@30) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-0-0&M0.c@113)))
+ (and (= R-T0*main_shared*x_69379872*0-3-1 0) (< OW-T0*main_shared*x_69379872*0-0-0&M0.c@113 OR-T0*main_shared*x_69379872*0-3-1&M0.c@32) (or (< OW-T0*main_shared*x_69379872*0-1-0&M0.c@18 OW-T0*main_shared*x_69379872*0-0-0&M0.c@113) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-1-0&M0.c@18)) (or (< OW-T0*main_shared*x_69379872*0-2-0&M0.c@40 OW-T0*main_shared*x_69379872*0-0-0&M0.c@113) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-2-0&M0.c@40)) (or (< OW-T0*main_shared*x_69379872*0-3-0&M0.c@30 OW-T0*main_shared*x_69379872*0-0-0&M0.c@113) (< OR-T0*main_shared*x_69379872*0-3-1&M0.c@32 OW-T0*main_shared*x_69379872*0-3-0&M0.c@30)))):named RWC3))
+
+(declare-const InitR-T1*testT1_i_69380504*0 Int)
+
+(assert (! (or (and (= R-T1*testT1_i_69380504*0-1-1 InitR-T1*testT1_i_69380504*0))):named RWC4))
+
+(declare-const InitR-T2*testT2_j_69380448*0 Int)
+
+(assert (! (or (and (= R-T2*testT2_j_69380448*0-2-1 InitR-T2*testT2_j_69380448*0))):named RWC5))
+
+(assert (! (or (and (= R-T2*testT2_j_69380448*0-2-2 InitR-T2*testT2_j_69380448*0))):named RWC6))
+
+(echo "PATH CONSTRAINTS -----")
+
+(assert (! (= false (= false (= 101 R-T0*main_shared*x_69379872*0-3-1))):named PC0_T3))
+
+(assert (! (= false (< 2 R-T2*testT2_j_69380448*0-2-1)):named PC1_T2))
+
+(assert (! (= false (< 0 R-T2*testT2_j_69380448*0-2-2)):named PC2_T2))
+
+(assert (! (= false (= 3 R-T1*testT1_i_69380504*0-1-1)):named PC3_T1))
+
+(echo "LOCKING CONSTRAINTS -----")
+
+(assert (! (or (and (< OS-unlock_0x4331f60lock-1-0&M0.c@24 OS-lock_0x4331f60lock-2-0&M0.c@44))
+(and (> OS-lock_0x4331f60lock-1-0&M0.c@21 OS-unlock_0x4331f60lock-2-0&M0.c@47))):named LC0))
+
+(assert (! (or (and (< OS-unlock_0x4331f60lock-2-0&M0.c@47 OS-lock_0x4331f60lock-1-0&M0.c@21))
+(and (> OS-lock_0x4331f60lock-2-0&M0.c@44 OS-unlock_0x4331f60lock-1-0&M0.c@24))):named LC1))
+
+
+(echo "FORK-START CONSTRAINTS -----")
+
+(assert (! (< OS-fork_1-0-0&M0.c@115 OS-start-1&M0.c@16):named FSC0))
+
+(assert (! (< OS-fork_2-0-0&M0.c@116 OS-start-2&M0.c@39):named FSC1))
+
+(assert (! (< OS-fork_3-0-0&M0.c@117 OS-start-3&M0.c@29):named FSC2))
+
+
+(echo "JOIN-EXIT CONSTRAINTS -----")
+
+(assert (! (> OS-join_1-0-0&M0.c@129 OS-exit-1&M0.c@25):named JEC0))
+
+(assert (! (> OS-join_2-0-0&M0.c@130 OS-exit-2&M0.c@45):named JEC1))
+
+(assert (! (> OS-join_2-0-0&M0.c@131 OS-exit-2&M0.c@45):named JEC2))
+
+
+(echo "WAIT-SIGNAL CONSTRAINTS -----")
+
+
+(check-sat)
+
+(get-model)
+
+(get-unsat-core)
+
+(echo "end")
+(reset)
+

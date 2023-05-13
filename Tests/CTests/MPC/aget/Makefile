@@ -1,12 +1,12 @@
-CC=/usr/bin/clang
+CC=/home/llvm-project/build/bin/clang
 CFLAGS=-g
 LDFLAGS=-lpthread
 
-LLVM_CC=llvm-gcc
+LLVM_CC=/home/llvm-project/build/bin/clang
 LLVM_LLC=llc
-LLVM_OPT=opt
+LLVM_OPT=/home/llvm-project/build/bin/opt
 LLVM_LINK=llvm-link
-SYMB_PASS=$(INSTALL_PATH)/llvm-2.9/Release+Asserts/lib/SymbiosisBBPass.so
+SYMB_PASS=/home/llvm-project/build/lib/SymbiosisBBPass.so
 
 aget:
 	$(LLVM_CC) -emit-llvm -c -g agetKLEE.c -o agetKLEE.bc

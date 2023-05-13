@@ -10,35 +10,29 @@
 #ifndef KLEE_SEARCHER_H
 #define KLEE_SEARCHER_H
 
-#include <vector>
-#include <set>
-#include <map>
-#include <queue>
+#include "klee/Internal/System/Time.h"
 
-// Nuno: added function pass
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/Pass.h"
 
-// FIXME: Move out of header, use llvm streams.
-#include <ostream>
+#include <map>
+#include <queue>
+#include <set>
+#include <vector>
 
 namespace llvm {
   class BasicBlock;
-    class Function;
-    class Instruction;
-    //Nuno: add bug redux
-    class PostDominanceFrontier;
-    class PostDominatorTree;
+  class Function;
+  class Instruction;
+  class raw_ostream;
 }
 
 namespace klee {
-    template<class T> class DiscretePDF;
-    class ExecutionState;
-    class Executor;
-    //Nuno: add bug redux
-    class KInstruction;
-    struct KFunction;
-    
-    
+  template<class T> class DiscretePDF;
+  class ExecutionState;
+  class Executor;
+ 
   class Searcher {
   public:
     virtual ~Searcher();
@@ -46,14 +40,14 @@ namespace klee {
     virtual ExecutionState &selectState() = 0;
 
     virtual void update(ExecutionState *current,
-                        const std::set<ExecutionState*> &addedStates,
-                        const std::set<ExecutionState*> &removedStates) = 0;
+                        const std::vector<ExecutionState *> &addedStates,
+                        const std::vector<ExecutionState *> &removedStates) = 0;
 
     virtual bool empty() = 0;
 
     // prints name of searcher as a klee_message()
     // TODO: could probably make prettier or more flexible
-    virtual void printName(std::ostream &os) { 
+    virtual void printName(llvm::raw_ostream &os) {
       os << "<unnamed searcher>\n";
     }
 
@@ -66,30 +60,31 @@ namespace klee {
     // utility functions
 
     void addState(ExecutionState *es, ExecutionState *current = 0) {
-      std::set<ExecutionState*> tmp;
-      tmp.insert(es);
-      update(current, tmp, std::set<ExecutionState*>());
+      std::vector<ExecutionState *> tmp;
+      tmp.push_back(es);
+      update(current, tmp, std::vector<ExecutionState *>());
     }
 
     void removeState(ExecutionState *es, ExecutionState *current = 0) {
-      std::set<ExecutionState*> tmp;
-      tmp.insert(es);
-      update(current, std::set<ExecutionState*>(), tmp);
+      std::vector<ExecutionState *> tmp;
+      tmp.push_back(es);
+      update(current, std::vector<ExecutionState *>(), tmp);
     }
-    
-  //Nuno: added for bugredux
+
     enum CoreSearchType {
-        DFS,
-        RandomState,
-        RandomPath,
-        NURS_CovNew,
-        NURS_MD2U,
-        NURS_Depth,
-        NURS_ICnt,
-        NURS_CPICnt,
-        NURS_QC
+      DFS,
+      BFS,
+      RandomState,
+      RandomPath,
+      NURS_CovNew,
+      NURS_MD2U,
+      NURS_Depth,
+      NURS_RP,
+      NURS_ICnt,
+      NURS_CPICnt,
+      NURS_QC
     };
-};
+  };
 
   class DFSSearcher : public Searcher {
     std::vector<ExecutionState*> states;
@@ -97,160 +92,102 @@ namespace klee {
   public:
     ExecutionState &selectState();
     void update(ExecutionState *current,
-                const std::set<ExecutionState*> &addedStates,
-                const std::set<ExecutionState*> &removedStates);
+                const std::vector<ExecutionState *> &addedStates,
+                const std::vector<ExecutionState *> &removedStates);
     bool empty() { return states.empty(); }
-    void printName(std::ostream &os) {
+    void printName(llvm::raw_ostream &os) {
       os << "DFSSearcher\n";
     }
   };
+
+ //Nuno: added for bugredux {  ###########################
     
+    // class GeneralReplaySearcher : public Searcher {
+    // protected:
+    //     Executor &executor;
+    //     std::vector<ExecutionState*> states;
+        
+    //     std::vector<std::string> callSeq;
+    //     int eventPtr;
+    //     bool getToUserMain;
+        
+    //     std::string sourceFile;
+    //     std::map<llvm::Function*,int> funcShortMap;
+    //     std::vector<KInstruction*> targetInstList;
+    //     std::map<llvm::Instruction*, int> curDistanceMap; //distances between functions
+        
+    //     std::map<llvm::Instruction*, int> curInsideFuncDisMap;
+    //     std::vector<KFunction*> functions;
+        
+    //     //std::map<llvm::Function*, std::vector<llvm::Instruction*>* > cachedCallSite; //Nuno: commented this
+        
+    //     void CleanCachedCallSites();
+        
+    //     std::set<llvm::BasicBlock*> prunedBBSet;
+    //     std::set<llvm::Function*> unvisitedFunc;
+        
+    //     int lastChoiceNumber;//remember last choice so that do not need to pick state
+    //     ExecutionState *lastChoice;
+        
+    //     //symbiosis
+    //     std::set<llvm::Function*> visitedFuncs; //** Nuno: set used to mark the functions containing the events of a given aviso trace
+    //     std::map<llvm::BasicBlock*, int> bbCache; //** Nuno: map: BB -> distance to next event ; cache used to avoid re-computing event reachability for every instruction of a given BB
+        
+        
+    // public:
+    //     bool getTarget;
+    //     GeneralReplaySearcher(Executor &executor);
+	  //   ~GeneralReplaySearcher();
+        
+	  //   void generateFuncShort();
+	  //   void generateNewShortDistance();
+	  //   void findNextTarget();
+	  //   KInstruction* findInstFromSourceLine(std::string sourceline);
+        
+        
+	  //   ExecutionState &selectState();
+	  //   void update(ExecutionState *current,
+	  //               const std::set<ExecutionState*> &addedStates,
+	  //               const std::set<ExecutionState*> &removedStates);
+	  //   bool empty() { return states.empty(); }
+	  //   void printName(std::ostream &os) {
+    //         os << "GeneralReplaySearcher\n";
+	  //   }
+    // };
     
-    //Nuno: added for bugredux {  ###########################
+    // //Nuno: replay call sequences in symbolic execution
+    // class AvisoReplaySearcher : public GeneralReplaySearcher {
+        
+    // public:
+    //     AvisoReplaySearcher(Executor &executor);
+	  //   ~AvisoReplaySearcher();
+        
+    //     void generateNewShortDistance();
+    //     void findNextTarget();
+    //     void expandTraceFile(); //** Nuno: complete the aviso trace with events referring to the function call seq
+        
+    //     ExecutionState &selectState();
+        
+    //     bool empty() { return states.empty(); }
+	  //   void printName(std::ostream &os) {
+    //         os << "AvisoReplaySearcher\n";
+	  //   }
+        
+    // };
     
-    class GeneralReplaySearcher : public Searcher {
-    protected:
-        Executor &executor;
-        std::vector<ExecutionState*> states;
-        
-        std::vector<std::string> callSeq;
-        int eventPtr;
-        bool getToUserMain;
-        
-        std::string sourceFile;
-        std::map<llvm::Function*,int> funcShortMap;
-        std::vector<KInstruction*> targetInstList;
-        std::map<llvm::Instruction*, int> curDistanceMap; //distances between functions
-        
-        std::map<llvm::Instruction*, int> curInsideFuncDisMap;
-        std::vector<KFunction*> functions;
-        
-        //std::map<llvm::Function*, std::vector<llvm::Instruction*>* > cachedCallSite; //Nuno: commented this
-        
-        void CleanCachedCallSites();
-        
-        std::set<llvm::BasicBlock*> prunedBBSet;
-        std::set<llvm::Function*> unvisitedFunc;
-        
-        int lastChoiceNumber;//remember last choice so that do not need to pick state
-        ExecutionState *lastChoice;
-        
-        //symbiosis
-        std::set<llvm::Function*> visitedFuncs; //** Nuno: set used to mark the functions containing the events of a given aviso trace
-        std::map<llvm::BasicBlock*, int> bbCache; //** Nuno: map: BB -> distance to next event ; cache used to avoid re-computing event reachability for every instruction of a given BB
-        
-        
-    public:
-        bool getTarget;
-        GeneralReplaySearcher(Executor &executor);
-	    ~GeneralReplaySearcher();
-        
-	    void generateFuncShort();
-	    void generateNewShortDistance();
-	    void findNextTarget();
-	    KInstruction* findInstFromSourceLine(std::string sourceline);
-        
-        
-	    ExecutionState &selectState();
-	    void update(ExecutionState *current,
-	                const std::set<ExecutionState*> &addedStates,
-	                const std::set<ExecutionState*> &removedStates);
-	    bool empty() { return states.empty(); }
-	    void printName(std::ostream &os) {
-            os << "GeneralReplaySearcher\n";
-	    }
-    };
-    
-    //Nuno: replay call sequences in symbolic execution
-    class AvisoReplaySearcher : public GeneralReplaySearcher {
-        
-    public:
-        AvisoReplaySearcher(Executor &executor);
-	    ~AvisoReplaySearcher();
-        
-        void generateNewShortDistance();
-        void findNextTarget();
-        void expandTraceFile(); //** Nuno: complete the aviso trace with events referring to the function call seq
-        
-        ExecutionState &selectState();
-        
-        bool empty() { return states.empty(); }
-	    void printName(std::ostream &os) {
-            os << "AvisoReplaySearcher\n";
-	    }
-        
-    };
-    
-    
-    //Nuno: replay crash stack in a shortest distance in ICFG.
-    class ShortestPathSearcher : public Searcher {
-        Executor &executor;
-        std::vector<ExecutionState*> states;
-        std::vector<std::string> callStack;
-        std::set<llvm::BasicBlock*> prunedBBSet;
-        unsigned callStackPtr;
-        unsigned targetPtr;
-        bool getTarget;
-        
-        int lastChoiceNumber;//remember last choice so that do not need to pick state
-        ExecutionState *lastChoice;
-        std::map<llvm::Function*,int> funcShortMap;
-        std::vector<llvm::Instruction*> targetInstList;
-        std::vector<llvm::Instruction*> stackcallList;
-        std::map<llvm::Instruction*, int> curDistanceMap;
-        
-        std::map<llvm::Instruction*, int> curInsideFuncDisMap;
-        std::vector<KFunction*> functions;
-        
-        std::set<llvm::Instruction*> visitedInstSet;
-        
-        
-        //temp added for midway change target to accelerate search
-        std::map<llvm::Instruction*, int> changeTargetDisMap;
-        std::map<ExecutionState*, int> changeTargetReachFlag;
-        llvm::Instruction* changeTargetInst;
-        std::string changeTargetSource;
-        
-    public:
-        ShortestPathSearcher(Executor &executor);
-	    ~ShortestPathSearcher();
-        
-	    int getDistanceForBB(llvm::BasicBlock* bb, llvm::Instruction*);
-	    void generateNewShortDistance();
-	    void generateFuncMap();
-	    void generateChangeDis();
-	    void findNextTarget();
-	    llvm::Instruction* findInstFromSourceLine(std::string sourceline);
-        
-        
-        ExecutionState &selectState();
-	    void update(ExecutionState *current,
-	                const std::set<ExecutionState*> &addedStates,
-	                const std::set<ExecutionState*> &removedStates);
-	    bool empty() { return states.empty(); }
-	    void printName(std::ostream &os) {
-            os << "ShortestSearcher\n";
-	    }
-        
-    };
-    
-    //Nuno: a class used to access dominator information
-    class DomInterfacePass : public llvm::FunctionPass {
-        static char ID;
-        
-	public:
-        std::vector<llvm::Instruction*> outputList;
-        std::vector<llvm::Instruction*>* inList;
-        std::set<llvm::Function*>* unvisitedF;
-        std::vector<llvm::BasicBlock*> outputPrunedList;
-        
-        DomInterfacePass(std::vector<llvm::Instruction*>* inputList, std::set<llvm::Function*>* unvisitedList);
-	    virtual void getAnalysisUsage(llvm::AnalysisUsage &AU) const;
-        
-        virtual bool runOnFunction(llvm::Function &f);
-    };
-    
-    //Nuno: added for bugredux } #########################
+  class BFSSearcher : public Searcher {
+    std::deque<ExecutionState*> states;
+
+  public:
+    ExecutionState &selectState();
+    void update(ExecutionState *current,
+                const std::vector<ExecutionState *> &addedStates,
+                const std::vector<ExecutionState *> &removedStates);
+    bool empty() { return states.empty(); }
+    void printName(llvm::raw_ostream &os) {
+      os << "BFSSearcher\n";
+    }
+  };
 
   class RandomSearcher : public Searcher {
     std::vector<ExecutionState*> states;
@@ -258,10 +195,10 @@ namespace klee {
   public:
     ExecutionState &selectState();
     void update(ExecutionState *current,
-                const std::set<ExecutionState*> &addedStates,
-                const std::set<ExecutionState*> &removedStates);
+                const std::vector<ExecutionState *> &addedStates,
+                const std::vector<ExecutionState *> &removedStates);
     bool empty() { return states.empty(); }
-    void printName(std::ostream &os) {
+    void printName(llvm::raw_ostream &os) {
       os << "RandomSearcher\n";
     }
   };
@@ -270,6 +207,7 @@ namespace klee {
   public:
     enum WeightType {
       Depth,
+      RP,
       QueryCost,
       InstCount,
       CPInstCount,
@@ -278,7 +216,6 @@ namespace klee {
     };
 
   private:
-    Executor &executor;
     DiscretePDF<ExecutionState*> *states;
     WeightType type;
     bool updateWeights;
@@ -286,18 +223,19 @@ namespace klee {
     double getWeight(ExecutionState*);
 
   public:
-    WeightedRandomSearcher(Executor &executor, WeightType type);
+    WeightedRandomSearcher(WeightType type);
     ~WeightedRandomSearcher();
 
     ExecutionState &selectState();
     void update(ExecutionState *current,
-                const std::set<ExecutionState*> &addedStates,
-                const std::set<ExecutionState*> &removedStates);
+                const std::vector<ExecutionState *> &addedStates,
+                const std::vector<ExecutionState *> &removedStates);
     bool empty();
-    void printName(std::ostream &os) {
+    void printName(llvm::raw_ostream &os) {
       os << "WeightedRandomSearcher::";
       switch(type) {
       case Depth              : os << "Depth\n"; return;
+      case RP                 : os << "RandomPath\n"; return;
       case QueryCost          : os << "QueryCost\n"; return;
       case InstCount          : os << "InstCount\n"; return;
       case CPInstCount        : os << "CPInstCount\n"; return;
@@ -317,81 +255,99 @@ namespace klee {
 
     ExecutionState &selectState();
     void update(ExecutionState *current,
-                const std::set<ExecutionState*> &addedStates,
-                const std::set<ExecutionState*> &removedStates);
+                const std::vector<ExecutionState *> &addedStates,
+                const std::vector<ExecutionState *> &removedStates);
     bool empty();
-    void printName(std::ostream &os) {
+    void printName(llvm::raw_ostream &os) {
       os << "RandomPathSearcher\n";
     }
   };
 
+
+  extern llvm::cl::opt<bool> UseIncompleteMerge;
+  class MergeHandler;
   class MergingSearcher : public Searcher {
-    Executor &executor;
-    std::set<ExecutionState*> statesAtMerge;
+    friend class MergeHandler;
+
+    private:
+
     Searcher *baseSearcher;
-    llvm::Function *mergeFunction;
 
-  private:
-    llvm::Instruction *getMergePoint(ExecutionState &es);
+    /// States that have been paused by the 'pauseState' function
+    std::vector<ExecutionState*> pausedStates;
 
-  public:
-    MergingSearcher(Executor &executor, Searcher *baseSearcher);
+    public:
+    MergingSearcher(Searcher *baseSearcher);
     ~MergingSearcher();
 
-    ExecutionState &selectState();
-    void update(ExecutionState *current,
-                const std::set<ExecutionState*> &addedStates,
-                const std::set<ExecutionState*> &removedStates);
-    bool empty() { return baseSearcher->empty() && statesAtMerge.empty(); }
-    void printName(std::ostream &os) {
-      os << "MergingSearcher\n";
+    /// ExecutionStates currently paused from scheduling because they are
+    /// waiting to be merged in a klee_close_merge instruction
+    std::set<ExecutionState *> inCloseMerge;
+
+    /// Keeps track of all currently ongoing merges.
+    /// An ongoing merge is a set of states (stored in a MergeHandler object)
+    /// which branched from a single state which ran into a klee_open_merge(),
+    /// and not all states in the set have reached the corresponding
+    /// klee_close_merge() yet.
+    std::vector<MergeHandler *> mergeGroups;
+
+    /// Remove state from the searcher chain, while keeping it in the executor.
+    /// This is used here to 'freeze' a state while it is waiting for other
+    /// states in its merge group to reach the same instruction.
+    void pauseState(ExecutionState &state){
+      assert(std::find(pausedStates.begin(), pausedStates.end(), &state) == pausedStates.end());
+      pausedStates.push_back(&state);
+      baseSearcher->removeState(&state);
     }
-  };
 
-  class BumpMergingSearcher : public Searcher {
-    Executor &executor;
-    std::map<llvm::Instruction*, ExecutionState*> statesAtMerge;
-    Searcher *baseSearcher;
-    llvm::Function *mergeFunction;
-
-  private:
-    llvm::Instruction *getMergePoint(ExecutionState &es);
-
-  public:
-    BumpMergingSearcher(Executor &executor, Searcher *baseSearcher);
-    ~BumpMergingSearcher();
+    /// Continue a paused state
+    void continueState(ExecutionState &state){
+      auto it = std::find(pausedStates.begin(), pausedStates.end(), &state);
+      assert( it != pausedStates.end());
+      pausedStates.erase(it);
+      baseSearcher->addState(&state);
+    }
 
     ExecutionState &selectState();
+
     void update(ExecutionState *current,
-                const std::set<ExecutionState*> &addedStates,
-                const std::set<ExecutionState*> &removedStates);
-    bool empty() { return baseSearcher->empty() && statesAtMerge.empty(); }
-    void printName(std::ostream &os) {
-      os << "BumpMergingSearcher\n";
+                const std::vector<ExecutionState *> &addedStates,
+                const std::vector<ExecutionState *> &removedStates) {
+      // We have to check if the current execution state was just deleted, as to
+      // not confuse the nurs searchers
+      if (std::find(pausedStates.begin(), pausedStates.end(), current) ==
+          pausedStates.end()) {
+        baseSearcher->update(current, addedStates, removedStates);
+      }
+    }
+
+    bool empty() { return baseSearcher->empty(); }
+    void printName(llvm::raw_ostream &os) {
+      os << "MergingSearcher\n";
     }
   };
 
   class BatchingSearcher : public Searcher {
     Searcher *baseSearcher;
-    double timeBudget;
+    time::Span timeBudget;
     unsigned instructionBudget;
 
     ExecutionState *lastState;
-    double lastStartTime;
+    time::Point lastStartTime;
     unsigned lastStartInstructions;
 
   public:
     BatchingSearcher(Searcher *baseSearcher, 
-                     double _timeBudget,
+                     time::Span _timeBudget,
                      unsigned _instructionBudget);
     ~BatchingSearcher();
 
     ExecutionState &selectState();
     void update(ExecutionState *current,
-                const std::set<ExecutionState*> &addedStates,
-                const std::set<ExecutionState*> &removedStates);
+                const std::vector<ExecutionState *> &addedStates,
+                const std::vector<ExecutionState *> &removedStates);
     bool empty() { return baseSearcher->empty(); }
-    void printName(std::ostream &os) {
+    void printName(llvm::raw_ostream &os) {
       os << "<BatchingSearcher> timeBudget: " << timeBudget
          << ", instructionBudget: " << instructionBudget
          << ", baseSearcher:\n";
@@ -402,7 +358,8 @@ namespace klee {
 
   class IterativeDeepeningTimeSearcher : public Searcher {
     Searcher *baseSearcher;
-    double time, startTime;
+    time::Point startTime;
+    time::Span time;
     std::set<ExecutionState*> pausedStates;
 
   public:
@@ -411,10 +368,10 @@ namespace klee {
 
     ExecutionState &selectState();
     void update(ExecutionState *current,
-                const std::set<ExecutionState*> &addedStates,
-                const std::set<ExecutionState*> &removedStates);
+                const std::vector<ExecutionState *> &addedStates,
+                const std::vector<ExecutionState *> &removedStates);
     bool empty() { return baseSearcher->empty() && pausedStates.empty(); }
-    void printName(std::ostream &os) {
+    void printName(llvm::raw_ostream &os) {
       os << "IterativeDeepeningTimeSearcher\n";
     }
   };
@@ -431,10 +388,10 @@ namespace klee {
 
     ExecutionState &selectState();
     void update(ExecutionState *current,
-                const std::set<ExecutionState*> &addedStates,
-                const std::set<ExecutionState*> &removedStates);
+                const std::vector<ExecutionState *> &addedStates,
+                const std::vector<ExecutionState *> &removedStates);
     bool empty() { return searchers[0]->empty(); }
-    void printName(std::ostream &os) {
+    void printName(llvm::raw_ostream &os) {
       os << "<InterleavedSearcher> containing "
          << searchers.size() << " searchers:\n";
       for (searchers_ty::iterator it = searchers.begin(), ie = searchers.end();
@@ -444,6 +401,7 @@ namespace klee {
     }
   };
 
+
 }
 
-#endif
+#endif /* KLEE_SEARCHER_H */

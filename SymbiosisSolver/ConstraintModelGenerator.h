@@ -59,6 +59,7 @@ public:
     void addAvisoConstraints(std::map<std::string, std::vector<Operation*> > operationsByThread, AvisoEventVector fulltrace);
     void openOutputFile(); //opens a file used to store the generated model
     bool solve();   //tries to solve the model and returns true if the model has a solution
+    bool solve_lz();   //tries to solve the model and returns true if the model has a solution
     bool solve_yqp();   //tries to solve the model and returns true if the model has a solution
     bool solveWithSolution(std::vector<std::string> solution, bool invertBugCond);   //solve the model with the bug condition inverted and a solution, in order to find the buggy constraints
     void closeSolver();  //close the output file and the pipes, and kills the process running z3

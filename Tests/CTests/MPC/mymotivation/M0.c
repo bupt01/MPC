@@ -40,7 +40,7 @@ void *testT2() {
 	x = 100;
 	int j, m; klee_make_symbolic(&j, sizeof(j), "j");  
 	if (j > 2)
-	    return ;
+	   return 0;
 	while (j-- > 0) {
 		pthread_mutex_lock(&lock);
 		y++;

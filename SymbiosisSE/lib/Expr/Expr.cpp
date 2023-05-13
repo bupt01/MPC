@@ -7,30 +7,36 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "klee/Expr.h"
-#include "klee/Config/Version.h"
+#include "klee/Expr/Expr.h"
 
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
-#include "llvm/ADT/Hashing.h"
-#endif
-#include "llvm/Support/CommandLine.h"
+#include "klee/Config/Version.h"
+#include "klee/Expr/ExprPPrinter.h"
 // FIXME: We shouldn't need this once fast constant support moves into
 // Core. If we need to do arithmetic, we probably want to use APInt.
 #include "klee/Internal/Support/IntEvaluation.h"
+#include "klee/OptionCategories.h"
 
-#include "klee/util/ExprPPrinter.h"
+#include "llvm/ADT/Hashing.h"
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/raw_ostream.h"
 
-#include <iostream>
 #include <sstream>
 
 using namespace klee;
 using namespace llvm;
 
+namespace klee {
+llvm::cl::OptionCategory
+    ExprCat("Expression building and printing options",
+            "These options impact the way expressions are build and printed.");
+}
+
 namespace {
-  cl::opt<bool>
-  ConstArrayOpt("const-array-opt",
-	 cl::init(false),
-	 cl::desc("Enable various optimizations involving all-constant arrays."));
+cl::opt<bool> ConstArrayOpt(
+    "const-array-opt", cl::init(false),
+    cl::desc(
+        "Enable an optimization involving all-constant arrays (default=false)"),
+    cl::cat(klee::ExprCat));
 }
 
 /***/
@@ -83,6 +89,13 @@ ref<Expr> Expr::createTempRead(const Array *array, Expr::Width w) {
   }
 }
 
+int Expr::compare(const Expr &b) const {
+  static ExprEquivSet equivs;
+  int r = compare(b, equivs);
+  equivs.clear();
+  return r;
+}
+
 // returns 0 if b is structurally equal to *this
 int Expr::compare(const Expr &b, ExprEquivSet &equivs) const {
   if (this == &b) return 0;
@@ -116,7 +129,7 @@ int Expr::compare(const Expr &b, ExprEquivSet &equivs) const {
   return 0;
 }
 
-void Expr::printKind(std::ostream &os, Kind k) {
+void Expr::printKind(llvm::raw_ostream &os, Kind k) {
   switch(k) {
 #define X(C) case C: os << #C; break
     X(Constant);
@@ -177,11 +190,12 @@ unsigned Expr::computeHash() {
 }
 
 unsigned ConstantExpr::computeHash() {
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
-  hashValue = hash_value(value) ^ (getWidth() * MAGIC_HASH_CONSTANT);
-#else
-  hashValue = value.getHashValue() ^ (getWidth() * MAGIC_HASH_CONSTANT);
-#endif
+  Expr::Width w = getWidth();
+  if (w <= 64)
+    hashValue = value.getLimitedValue() ^ (w * MAGIC_HASH_CONSTANT);
+  else
+    hashValue = hash_value(value) ^ (w * MAGIC_HASH_CONSTANT);
+
   return hashValue;
 }
 
@@ -206,7 +220,7 @@ unsigned ReadExpr::computeHash() {
 }
 
 unsigned NotExpr::computeHash() {
-  unsigned hashValue = expr->hash() * Expr::MAGIC_HASH_CONSTANT * Expr::Not;
+  hashValue = expr->hash() * Expr::MAGIC_HASH_CONSTANT * Expr::Not;
   return hashValue;
 }
 
@@ -286,7 +300,7 @@ ref<Expr> Expr::createFromKind(Kind k, std::vector<CreateArg> args) {
 }
 
 
-void Expr::printWidth(std::ostream &os, Width width) {
+void Expr::printWidth(llvm::raw_ostream &os, Width width) {
   switch(width) {
   case Expr::Bool: os << "Expr::Bool"; break;
   case Expr::Int8: os << "Expr::Int8"; break;
@@ -306,13 +320,13 @@ ref<Expr> Expr::createIsZero(ref<Expr> e) {
   return EqExpr::create(e, ConstantExpr::create(0, e->getWidth()));
 }
 
-void Expr::print(std::ostream &os) const {
+void Expr::print(llvm::raw_ostream &os) const {
   ExprPPrinter::printSingleExpr(os, const_cast<Expr*>(this));
 }
 
 void Expr::dump() const {
-  this->print(std::cerr);
-  std::cerr << std::endl;
+  this->print(errs());
+  errs() << "\n";
 }
 
 /***/
@@ -327,7 +341,11 @@ ref<Expr> ConstantExpr::fromMemory(void *address, Width width) {
   // FIXME: what about machines without x87 support?
   default:
     return ConstantExpr::alloc(llvm::APInt(width,
+#if LLVM_VERSION_CODE >= LLVM_VERSION(5, 0)
+      (width+llvm::APFloatBase::integerPartWidth-1)/llvm::APFloatBase::integerPartWidth,
+#else
       (width+llvm::integerPartWidth-1)/llvm::integerPartWidth,
+#endif
       (const uint64_t*)address));
   }
 }
@@ -342,23 +360,19 @@ void ConstantExpr::toMemory(void *address) {
   case Expr::Int64: *((uint64_t*) address) = getZExtValue(64); break;
   // FIXME: what about machines without x87 support?
   case Expr::Fl80:
-    *((long double*) address) = *(long double*) value.getRawData();
+    *((long double*) address) = *(const long double*) value.getRawData();
     break;
   }
 }
 
-void ConstantExpr::toString(std::string &Res) const {
-  Res = value.toString(10, false);
+void ConstantExpr::toString(std::string &Res, unsigned radix) const {
+  Res = value.toString(radix, false);
 }
 
 ref<ConstantExpr> ConstantExpr::Concat(const ref<ConstantExpr> &RHS) {
   Expr::Width W = getWidth() + RHS->getWidth();
   APInt Tmp(value);
-#if LLVM_VERSION_CODE <= LLVM_VERSION(2, 8)
-  Tmp.zext(W);
-#else
   Tmp=Tmp.zext(W);
-#endif
   Tmp <<= RHS->getWidth();
   Tmp |= APInt(RHS->value).zext(W);
 
@@ -485,36 +499,81 @@ ref<Expr>  NotOptimizedExpr::create(ref<Expr> src) {
 
 /***/
 
-extern "C" void vc_DeleteExpr(void*);
+Array::Array(const std::string &_name, uint64_t _size,
+             const ref<ConstantExpr> *constantValuesBegin,
+             const ref<ConstantExpr> *constantValuesEnd, Expr::Width _domain,
+             Expr::Width _range)
+    : name(_name), size(_size), domain(_domain), range(_range),
+      constantValues(constantValuesBegin, constantValuesEnd) {
 
-Array::~Array() {
-  // FIXME: This shouldn't be necessary.
-  if (stpInitialArray) {
-    ::vc_DeleteExpr(stpInitialArray);
-    stpInitialArray = 0;
-  }
+  assert((isSymbolicArray() || constantValues.size() == size) &&
+         "Invalid size for constant array!");
+  computeHash();
+#ifndef NDEBUG
+  for (const ref<ConstantExpr> *it = constantValuesBegin;
+       it != constantValuesEnd; ++it)
+    assert((*it)->getWidth() == getRange() &&
+           "Invalid initial constant value!");
+#endif // NDEBUG
 }
 
+Array::~Array() {
+}
+
+unsigned Array::computeHash() {
+  unsigned res = 0;
+  for (unsigned i = 0, e = name.size(); i != e; ++i)
+    res = (res * Expr::MAGIC_HASH_CONSTANT) + name[i];
+  res = (res * Expr::MAGIC_HASH_CONSTANT) + size;
+  hashValue = res;
+  return hashValue; 
+}
 /***/
 
 ref<Expr> ReadExpr::create(const UpdateList &ul, ref<Expr> index) {
-  // rollback index when possible... 
+  // rollback update nodes if possible
 
-  // XXX this doesn't really belong here... there are basically two
-  // cases, one is rebuild, where we want to optimistically try various
-  // optimizations when the index has changed, and the other is 
-  // initial creation, where we expect the ObjectState to have constructed
-  // a smart UpdateList so it is not worth rescanning.
-
-  const UpdateNode *un = ul.head;
-  for (; un; un=un->next) {
+  // Iterate through the update list from the most recent to the
+  // least recent to find a potential written value for a concrete index;
+  // stop if an update with symbolic has been found as we don't know which
+  // array element has been updated
+  auto un = ul.head.get();
+  bool updateListHasSymbolicWrites = false;
+  for (; un; un = un->next.get()) {
     ref<Expr> cond = EqExpr::create(index, un->index);
-    
     if (ConstantExpr *CE = dyn_cast<ConstantExpr>(cond)) {
       if (CE->isTrue())
+        // Return the found value
         return un->value;
     } else {
+      // Found write with symbolic index
+      updateListHasSymbolicWrites = true;
       break;
+    }
+  }
+
+  if (ul.root->isConstantArray() && !updateListHasSymbolicWrites) {
+    // No updates with symbolic index to a constant array have been found
+    if (ConstantExpr *CE = dyn_cast<ConstantExpr>(index)) {
+      assert(CE->getWidth() <= 64 && "Index too large");
+      uint64_t concreteIndex = CE->getZExtValue();
+      uint64_t size = ul.root->size;
+      if (concreteIndex < size) {
+        return ul.root->constantValues[concreteIndex];
+      }
+    }
+  }
+
+  // Now, no update with this concrete index exists
+  // Try to remove any most recent but unimportant updates
+  if (ConstantExpr *CE = dyn_cast<ConstantExpr>(index)) {
+    assert(CE->getWidth() <= 64 && "Index too large");
+    uint64_t concreteIndex = CE->getZExtValue();
+    uint64_t size = ul.root->size;
+    if (concreteIndex < size) {
+      // Create shortened update list
+      UpdateList newUpdateList(ul.root, un);
+      return ReadExpr::alloc(newUpdateList, index);
     }
   }
 
@@ -610,7 +669,6 @@ ref<Expr> ConcatExpr::create8(const ref<Expr> &kid1, const ref<Expr> &kid2,
 
 ref<Expr> ExtractExpr::create(ref<Expr> expr, unsigned off, Width w) {
   unsigned kw = expr->getWidth();
-  //std::cerr << "kw: " << kw << " " << w << " " << off << "\n";
   assert(w > 0 && off + w <= kw && "invalid extract");
   
   if (w == kw) {
@@ -975,7 +1033,7 @@ ref<Expr>  _e_op ::create(const ref<Expr> &l, const ref<Expr> &r) {    \
   
 
 static ref<Expr> EqExpr_create(const ref<Expr> &l, const ref<Expr> &r) {
-    if (l == r) {
+  if (l == r) {
     return ConstantExpr::alloc(1, Expr::Bool);
   } else {
     return EqExpr::alloc(l, r);
@@ -1096,7 +1154,7 @@ static ref<Expr> EqExpr_createPartial(Expr *l, const ref<ConstantExpr> &cr) {
 }
   
 ref<Expr> NeExpr::create(const ref<Expr> &l, const ref<Expr> &r) {
-    return EqExpr::create(ConstantExpr::create(0, Expr::Bool),
+  return EqExpr::create(ConstantExpr::create(0, Expr::Bool),
                         EqExpr::create(l, r));
 }
 

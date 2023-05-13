@@ -84,9 +84,6 @@ void parse_args(int argc, char *const* argv) {
 			case 'o':
 				solutions = optarg;
 				break;
-
-
-
 			default:
 				abort();
 		}
@@ -163,13 +160,12 @@ bool checkSolverState(pid_t pid) {
     }
 }
 
-string INSTALL_PATH = getenv("INSTALL_PATH");
+string INSTALL_PATH="/home" ; //= getenv("INSTALL_PATH");
 int main(int argc, char *const* argv) {
-	
+
 	double beginTime = clock();
 	int pathNum = 0;
 	parse_args(argc, argv);
-
 	std::string cmd;
 	if (intValueOf(times) == 0) {
 		execute("rm klee-* index_* -rf");
@@ -180,16 +176,17 @@ int main(int argc, char *const* argv) {
         pathNum++;
 
 	  clock_t t = clock();
-	  cmd = "time " + INSTALL_PATH + "/symbiosis-master/SymbiosisSE/Release+Asserts/bin/symbiosisse --allow-external-sym-calls --bb-trace=" + trace + "/example.trace.fail " + trace + bcFile + " --times="+times+ " --index=0 --last="+last + " --trace=" + trace;
-
+	  //cmd = "time " + INSTALL_PATH + "/symbiosis-master/SymbiosisSE/Release+Asserts/bin/symbiosisse --allow-external-sym-calls --bb-trace=" + trace + "/example.trace.fail " + trace + bcFile + " --times="+times+ " --index=0 --last="+last + " --trace=" + trace;
+      cmd = "time " + INSTALL_PATH + "/symbiosis-master/SymbiosisSE/build/bin/klee --bb-trace=" + trace + "example.trace.fail " + trace +bcFile + " --times="+times+ " --index=0 --last="+last + " --trace=" + trace;
+	  std::cout<<"cmd: "<<cmd<<std::endl; 
 	  execute(cmd.c_str());
 	}
-
+    
 	clock_t t = clock();
 	pid_t curPID = getpid();
-	cmd = "time " + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/symbiosisSolver --trace-folder="+trace+"/klee-last --model=" + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt --solution=" + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt --with-solver=" + INSTALL_PATH + "/z3/bin/z3 --parallel=0 --times=" + stringValueOf(curPID) + " --last=" + last + " --solutions=" + solutions + " --trace=" + trace + " " + " --bcfile="+bcFile;
+	cmd = "time " + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/symbiosisSolver --trace-folder="+trace+"klee-last --model=" + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt --solution=" + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt --with-solver=" + INSTALL_PATH + "/z3-z3-4.8.8/build/z3 --parallel=0 --times=" + stringValueOf(curPID) + " --last=" + last + " --solutions=" + solutions + " --trace=" + trace + " " + " --bcfile="+bcFile;
+	std::cout<<"cmd01:"<<cmd<<std::endl;
 	execute(cmd);
-
 	string dir = INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/tmp/";
 
 	std::set<string> checkedFiles;
@@ -199,6 +196,7 @@ int main(int argc, char *const* argv) {
 
 	do {
 		DIR* dirFile = opendir(dir.c_str());
+	    std::cout<<"dirFile"<<dir.c_str()<<std::endl;
 		flag = false;
 		if ( dirFile )
 		{
@@ -227,19 +225,19 @@ int main(int argc, char *const* argv) {
 
                     char filename[250];
                     strcpy(filename, hFile->d_name);
-                    cmd = "mv " + dir + filename + " " + trace+ "/index_"+ stringValueOf(curPID) + "_" + stringValueOf(i);
-
+                    cmd = "mv " + dir + filename + " " + trace+ "index_"+ stringValueOf(curPID) + "_" + stringValueOf(i);
+                    std::cout<<"cmd_while:" <<cmd<<std::endl;
                     execute(cmd.c_str());
 
                     t = clock();
 
-                    cmd = "nohup " + INSTALL_PATH + "/symbiosis-master/SymbiosisSE/Release+Asserts/bin/symbiosisse --allow-external-sym-calls --bb-trace="+trace+"example.trace.fail "+trace+bcFile + " --times="+times+ " --index="+ Index + " --last="+last + " --solutions=" + solutions + " --trace="+trace;
-                    execute(cmd);
+                    cmd = "nohup " + INSTALL_PATH + "/symbiosis-master/SymbiosisSE/build/bin/klee --bb-trace="+trace+"example.trace.fail "+trace+bcFile + " --times="+times+ " --index="+ Index + " --last="+last + " --solutions=" + solutions + " --trace="+trace;
+                    std::cout<<"cmd_while01:" <<cmd<<std::endl;
+					execute(cmd);
 
                     cmd = "nohup " + INSTALL_PATH + "/symbiosis-master/Engine/engine --times=1 --last=" + Index + " --solutions=" + solutions + " --trace=" + trace + " " + bcFile;
+				    std::cout<<"cmd_while02:" <<cmd<<std::endl;
                     execute(cmd);
-
-
 				} else {
 					;//std::cerr << "skip file: " << hFile->d_name << "\n";
 				}
@@ -255,6 +253,6 @@ int main(int argc, char *const* argv) {
 		int returnStatus;
 		waitpid(p, &returnStatus, 0);
 	}
-
+	
 	return 0;
 }

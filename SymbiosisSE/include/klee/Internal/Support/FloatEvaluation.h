@@ -9,13 +9,16 @@
 
 // FIXME: Ditch this and use APFloat.
 
-#ifndef KLEE_UTIL_FLOATS_H
-#define KLEE_UTIL_FLOATS_H
+#ifndef KLEE_FLOATEVALUATION_H
+#define KLEE_FLOATEVALUATION_H
 
 #include "klee/util/Bits.h"     //bits64::truncateToNBits
 #include "IntEvaluation.h" //ints::sext
 
+#include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MathExtras.h"
+
+#include <cassert>
 
 namespace klee {
 namespace floats {
@@ -81,7 +84,7 @@ inline uint64_t add(uint64_t l, uint64_t r, unsigned inWidth) {
   switch( inWidth ) {
   case FLT_BITS: return bits64::truncateToNBits(FloatAsUInt64(UInt64AsFloat(l)  + UInt64AsFloat(r)),  FLT_BITS);
   case DBL_BITS: return bits64::truncateToNBits(DoubleAsUInt64(UInt64AsDouble(l) + UInt64AsDouble(r)), DBL_BITS);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -90,7 +93,7 @@ inline uint64_t sub(uint64_t l, uint64_t r, unsigned inWidth) {
   switch( inWidth ) {
   case FLT_BITS: return bits64::truncateToNBits(FloatAsUInt64(UInt64AsFloat(l)  - UInt64AsFloat(r)),  FLT_BITS);
   case DBL_BITS: return bits64::truncateToNBits(DoubleAsUInt64(UInt64AsDouble(l) - UInt64AsDouble(r)), DBL_BITS);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -99,7 +102,7 @@ inline uint64_t mul(uint64_t l, uint64_t r, unsigned inWidth) {
   switch( inWidth ) {
   case FLT_BITS: return bits64::truncateToNBits(FloatAsUInt64(UInt64AsFloat(l)  * UInt64AsFloat(r)),  FLT_BITS);
   case DBL_BITS: return bits64::truncateToNBits(DoubleAsUInt64(UInt64AsDouble(l) * UInt64AsDouble(r)), DBL_BITS);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -108,7 +111,7 @@ inline uint64_t div(uint64_t l, uint64_t r, unsigned inWidth) {
   switch( inWidth ) {
   case FLT_BITS: return bits64::truncateToNBits(FloatAsUInt64(UInt64AsFloat(l)  / UInt64AsFloat(r)),  FLT_BITS);
   case DBL_BITS: return bits64::truncateToNBits(DoubleAsUInt64(UInt64AsDouble(l) / UInt64AsDouble(r)), DBL_BITS);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -117,7 +120,7 @@ inline uint64_t mod(uint64_t l, uint64_t r, unsigned inWidth) {
   switch( inWidth ) {
   case FLT_BITS: return bits64::truncateToNBits(FloatAsUInt64( fmod(UInt64AsFloat(l),  UInt64AsFloat(r)) ), FLT_BITS);
   case DBL_BITS: return bits64::truncateToNBits(DoubleAsUInt64( fmod(UInt64AsDouble(l), UInt64AsDouble(r)) ), DBL_BITS);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -129,9 +132,11 @@ inline uint64_t mod(uint64_t l, uint64_t r, unsigned inWidth) {
 // determine if l represents NaN
 inline bool isNaN(uint64_t l, unsigned inWidth) {
   switch( inWidth ) {
-  case FLT_BITS: return llvm::IsNAN( UInt64AsFloat(l) );
-  case DBL_BITS: return llvm::IsNAN( UInt64AsDouble(l) );
-  default: assert(0 && "invalid floating point width");
+  case FLT_BITS:
+    return std::isnan(UInt64AsFloat(l));
+  case DBL_BITS:
+    return std::isnan(UInt64AsDouble(l));
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -139,7 +144,7 @@ inline uint64_t eq(uint64_t l, uint64_t r, unsigned inWidth) {
   switch( inWidth ) {
   case FLT_BITS: return UInt64AsFloat(l)  == UInt64AsFloat(r);
   case DBL_BITS: return UInt64AsDouble(l) == UInt64AsDouble(r);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -147,7 +152,7 @@ inline uint64_t ne(uint64_t l, uint64_t r, unsigned inWidth) {
   switch( inWidth ) {
   case FLT_BITS: return UInt64AsFloat(l)  != UInt64AsFloat(r);
   case DBL_BITS: return UInt64AsDouble(l) != UInt64AsDouble(r);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -155,7 +160,7 @@ inline uint64_t lt(uint64_t l, uint64_t r, unsigned inWidth) {
   switch( inWidth ) {
   case FLT_BITS: return UInt64AsFloat(l)  < UInt64AsFloat(r);
   case DBL_BITS: return UInt64AsDouble(l) < UInt64AsDouble(r);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -163,7 +168,7 @@ inline uint64_t le(uint64_t l, uint64_t r, unsigned inWidth) {
   switch( inWidth ) {
   case FLT_BITS: return UInt64AsFloat(l)  <= UInt64AsFloat(r);
   case DBL_BITS: return UInt64AsDouble(l) <= UInt64AsDouble(r);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -171,7 +176,7 @@ inline uint64_t gt(uint64_t l, uint64_t r, unsigned inWidth) {
   switch( inWidth ) {
   case FLT_BITS: return UInt64AsFloat(l)  > UInt64AsFloat(r);
   case DBL_BITS: return UInt64AsDouble(l) > UInt64AsDouble(r);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -179,7 +184,7 @@ inline uint64_t ge(uint64_t l, uint64_t r, unsigned inWidth) {
   switch( inWidth ) {
   case FLT_BITS: return UInt64AsFloat(l)  >= UInt64AsFloat(r);
   case DBL_BITS: return UInt64AsDouble(l) >= UInt64AsDouble(r);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -221,7 +226,7 @@ inline uint64_t toUnsignedInt( uint64_t l, unsigned outWidth, unsigned inWidth )
   switch( inWidth ) {
   case FLT_BITS: return bits64::truncateToNBits((uint64_t)UInt64AsFloat(l),  outWidth );
   case DBL_BITS: return bits64::truncateToNBits((uint64_t)UInt64AsDouble(l), outWidth );
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -230,7 +235,7 @@ inline uint64_t toSignedInt( uint64_t l, unsigned outWidth, unsigned inWidth ) {
   switch( inWidth ) {
   case FLT_BITS: return bits64::truncateToNBits((int64_t)UInt64AsFloat(l),  outWidth);
   case DBL_BITS: return bits64::truncateToNBits((int64_t)UInt64AsDouble(l), outWidth);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -239,7 +244,7 @@ inline uint64_t UnsignedIntToFP( uint64_t l, unsigned outWidth ) {
   switch( outWidth ) {
   case FLT_BITS: return bits64::truncateToNBits(FloatAsUInt64((float)l),  outWidth);
   case DBL_BITS: return bits64::truncateToNBits(DoubleAsUInt64((double)l), outWidth);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
@@ -248,11 +253,11 @@ inline uint64_t SignedIntToFP( uint64_t l, unsigned outWidth, unsigned inWidth )
   switch( outWidth ) {
   case FLT_BITS: return bits64::truncateToNBits(FloatAsUInt64((float)(int64_t)ints::sext(l, 64, inWidth)), outWidth);
   case DBL_BITS: return bits64::truncateToNBits(DoubleAsUInt64((double)(int64_t)ints::sext(l,64, inWidth)), outWidth);
-  default: assert(0 && "invalid floating point width");
+  default: llvm::report_fatal_error("unsupported floating point width");
   }
 }
 
 } // end namespace ints
 } // end namespace klee
 
-#endif //KLEE_UTIL_FLOATS_H
+#endif /* KLEE_FLOATEVALUATION_H */

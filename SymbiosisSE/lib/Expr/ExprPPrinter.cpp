@@ -7,83 +7,53 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "klee/util/ExprPPrinter.h"
+#include "klee/Expr/ExprPPrinter.h"
 
-#include "klee/Constraints.h"
-
-#include "klee/ClapUtil.h"
+#include "klee/Expr/Constraints.h"
+#include "klee/OptionCategories.h"
+#include "klee/util/PrintContext.h"
 
 #include "llvm/Support/CommandLine.h"
-
+#include "llvm/Support/raw_ostream.h"
 
 #include <map>
 #include <vector>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
 
 using namespace klee;
 
 namespace {
-  llvm::cl::opt<bool>
-  PCWidthAsArg("pc-width-as-arg", llvm::cl::init(true));
 
-  llvm::cl::opt<bool>
-  PCAllWidths("pc-all-widths", llvm::cl::init(false));
+llvm::cl::opt<bool> PCWidthAsArg(
+    "pc-width-as-arg", llvm::cl::init(true),
+    llvm::cl::desc(
+        "Print the width as a separate argument, as opposed to a prefix "
+        "to the operation (default=true)"),
+    llvm::cl::cat(klee::ExprCat));
 
-  llvm::cl::opt<bool>
-  PCPrefixWidth("pc-prefix-width", llvm::cl::init(true));
+llvm::cl::opt<bool>
+    PCAllWidths("pc-all-widths", llvm::cl::init(false),
+                llvm::cl::desc("Print the width of all operations, including "
+                               "booleans (default=false)"),
+                llvm::cl::cat(klee::ExprCat));
 
-  llvm::cl::opt<bool>
-  PCMultibyteReads("pc-multibyte-reads", llvm::cl::init(true));
+llvm::cl::opt<bool>
+    PCPrefixWidth("pc-prefix-width", llvm::cl::init(true),
+                  llvm::cl::desc("Print width with 'w' prefix (default=true)"),
+                  llvm::cl::cat(klee::ExprCat));
 
-  llvm::cl::opt<bool>
-  PCAllConstWidths("pc-all-const-widths",  llvm::cl::init(false));
-}
+llvm::cl::opt<bool>
+    PCMultibyteReads("pc-multibyte-reads", llvm::cl::init(true),
+                     llvm::cl::desc("Print ReadLSB and ReadMSB expressions "
+                                    "when possible (default=true)"),
+                     llvm::cl::cat(klee::ExprCat));
 
-//:CLAP:{
-/// PrintContext - Helper class for storing extra information for
-/// the pretty printer.
-class PrintContext {
-private:
-  std::ostream &os;
-  std::stringstream ss;
-  std::string newline;
+llvm::cl::opt<bool> PCAllConstWidths(
+    "pc-all-const-widths", llvm::cl::init(false),
+    llvm::cl::desc(
+        "Always print the width of constant expressions (default=false)"),
+    llvm::cl::cat(klee::ExprCat));
 
-public:
-  /// Number of characters on the current line.
-  unsigned pos;
-
-public:
-  PrintContext(std::ostream &_os) : os(_os), newline("\n"), pos(0) {}
-
-  void setNewline(const std::string &_newline) {
-    newline = _newline;
-  }
-
-  void breakLine(unsigned indent=0) {
-    os << newline;
-    if (indent)
-      os << std::setw(indent) << ' ';
-    pos = indent;
-  }
-
-  /// write - Output a string to the stream and update the
-  /// position. The stream should not have any newlines.
-  void write(const std::string &s) {
-    os << s;
-    pos += s.length();
-  }
-
-  template <typename T>
-  PrintContext &operator<<(T elt) {
-    ss.str("");
-    ss << elt;
-    write(ss.str());
-    return *this;
-  }
-};
-//:CLAP:}
+} // namespace
 
 class PPrinter : public ExprPPrinter {
 public:
@@ -93,10 +63,11 @@ private:
   std::map<const UpdateNode*, unsigned> updateBindings;
   std::set< ref<Expr> > couldPrint, shouldPrint;
   std::set<const UpdateNode*> couldPrintUpdates, shouldPrintUpdates;
-  std::ostream &os;
+  llvm::raw_ostream &os;
   unsigned counter;
   unsigned updateCounter;
   bool hasScan;
+  bool forceNoLineBreaks;
   std::string newline;
 
   /// shouldPrintWidth - Predicate for whether this expression should
@@ -121,7 +92,8 @@ private:
     if (isVerySimple(e)) {
       return true;
     } else if (const ReadExpr *re = dyn_cast<ReadExpr>(e)) {
-      return isVerySimple(re->index) && isVerySimpleUpdate(re->updates.head);
+      return isVerySimple(re->index) &&
+             isVerySimpleUpdate(re->updates.head.get());
     } else {
       Expr *ep = e.get();
       for (unsigned i=0; i<ep->getNumKids(); i++)
@@ -142,7 +114,7 @@ private:
     // FIXME: This needs to be non-recursive.
     if (un) {
       if (couldPrintUpdates.insert(un).second) {
-        scanUpdate(un->next);
+        scanUpdate(un->next.get());
         scan1(un->index);
         scan1(un->value);
       } else {
@@ -159,7 +131,7 @@ private:
           scan1(ep->getKid(i));
         if (const ReadExpr *re = dyn_cast<ReadExpr>(e)) {
           usedArrays.insert(re->updates.root);
-          scanUpdate(re->updates.head);
+          scanUpdate(re->updates.head.get());
         }
       } else {
         shouldPrint.insert(e);
@@ -168,10 +140,10 @@ private:
   }
 
   void printUpdateList(const UpdateList &updates, PrintContext &PC) {
-    const UpdateNode *head = updates.head;
+    auto head = updates.head;
 
     // Special case empty list.
-    if (!head) {
+    if (head.isNull()) {
       // FIXME: We need to do something (assert, mangle, etc.) so that printing
       // distinct arrays with the same name doesn't fail.
       PC << updates.root->name;
@@ -182,22 +154,22 @@ private:
     bool openedList = false, nextShouldBreak = false;
     unsigned outerIndent = PC.pos;
     unsigned middleIndent = 0;
-    for (const UpdateNode *un = head; un; un = un->next) {      
+    for (auto un = head; !un.isNull(); un = un->next) {
       // We are done if we hit the cache.
-      std::map<const UpdateNode*, unsigned>::iterator it = 
-        updateBindings.find(un);
+      std::map<const UpdateNode *, unsigned>::iterator it =
+          updateBindings.find(un.get());
       if (it!=updateBindings.end()) {
         if (openedList)
           PC << "] @ ";
         PC << "U" << it->second;
         return;
-      } else if (!hasScan || shouldPrintUpdates.count(un)) {
+      } else if (!hasScan || shouldPrintUpdates.count(un.get())) {
         if (openedList)
           PC << "] @";
         if (un != head)
           PC.breakLine(outerIndent);
-        PC << "U" << updateCounter << ":"; 
-        updateBindings.insert(std::make_pair(un, updateCounter++));
+        PC << "U" << updateCounter << ":";
+        updateBindings.insert(std::make_pair(un.get(), updateCounter++));
         openedList = nextShouldBreak = false;
      }
     
@@ -345,7 +317,7 @@ private:
   }
 
 public:
-  PPrinter(std::ostream &_os) : os(_os), newline("\n") {
+  PPrinter(llvm::raw_ostream &_os) : os(_os), newline("\n") {
     reset();
   }
 
@@ -353,10 +325,15 @@ public:
     newline = _newline;
   }
 
+  void setForceNoLineBreaks(bool _forceNoLineBreaks) {
+    forceNoLineBreaks = _forceNoLineBreaks;
+  }
+
   void reset() {
     counter = 0;
     updateCounter = 0;
     hasScan = false;
+    forceNoLineBreaks = false;
     bindings.clear();
     updateBindings.clear();
     couldPrint.clear();
@@ -404,21 +381,13 @@ public:
     if (ConstantExpr *CE = dyn_cast<ConstantExpr>(e))
       printConst(CE, PC, printConstWidth);
     else {
-		//:CLAP: commend by Jeff
-//      std::map<ref<Expr>, unsigned>::iterator it = bindings.find(e);
-//      if (it!=bindings.end()) {
-//        PC << 'N' << it->second;//<<"-"<<getThreadName();
-//      } else
-      {
-    	if (!hasScan || shouldPrint.count(e)) {
-          PC << 'N' << counter <<':';//"-"<<getThreadName()<<
-          bindings.insert(std::make_pair(e, counter));
-          counter++;
-      	//commented by Jeff Huang
-
-          //for testing
-//          if(getThreadName()=="0")
-//        	  std::cerr<<"We are at "<<'N' << counter <<"-"<<getThreadName()<<"\n";
+      std::map<ref<Expr>, unsigned>::iterator it = bindings.find(e);
+      if (it!=bindings.end()) {
+        PC << 'N' << it->second;
+      } else {
+        if (!hasScan || shouldPrint.count(e)) {
+          PC << 'N' << counter << ':';
+          bindings.insert(std::make_pair(e, counter++));
         }
 
         // Detect multibyte reads.
@@ -430,7 +399,7 @@ public:
         // a declaration.
         if (PCMultibyteReads && e->getKind() == Expr::Concat) {
 	  const ReadExpr *base = hasOrderedReads(e, -1);
-	  int isLSB = (base != NULL);
+	  const bool isLSB = (base != nullptr);
 	  if (!isLSB)
 	    base = hasOrderedReads(e, 1);
 	  if (base) {
@@ -466,7 +435,7 @@ public:
   /* Public utility functions */
 
   void printSeparator(PrintContext &PC, bool simple, unsigned indent) {
-    if (simple) {
+    if (simple || forceNoLineBreaks) {
       PC << ' ';
     } else {
       PC.breakLine(indent);
@@ -474,11 +443,11 @@ public:
   }
 };
 
-ExprPPrinter *klee::ExprPPrinter::create(std::ostream &os) {
+ExprPPrinter *klee::ExprPPrinter::create(llvm::raw_ostream &os) {
   return new PPrinter(os);
 }
 
-void ExprPPrinter::printOne(std::ostream &os,
+void ExprPPrinter::printOne(llvm::raw_ostream &os,
                             const char *message, 
                             const ref<Expr> &e) {
   PPrinter p(os);
@@ -492,7 +461,7 @@ void ExprPPrinter::printOne(std::ostream &os,
   PC.breakLine();
 }
 
-void ExprPPrinter::printSingleExpr(std::ostream &os, const ref<Expr> &e) {
+void ExprPPrinter::printSingleExpr(llvm::raw_ostream &os, const ref<Expr> &e) {
   PPrinter p(os);
   p.scan(e);
 
@@ -502,13 +471,21 @@ void ExprPPrinter::printSingleExpr(std::ostream &os, const ref<Expr> &e) {
   p.print(e, PC);
 }
 
-void ExprPPrinter::printConstraints(std::ostream &os,
+void ExprPPrinter::printConstraints(llvm::raw_ostream &os,
                                     const ConstraintManager &constraints) {
   printQuery(os, constraints, ConstantExpr::alloc(false, Expr::Bool));
 }
 
+namespace {
 
-void ExprPPrinter::printQuery(std::ostream &os,
+struct ArrayPtrsByName {
+  bool operator()(const Array *a1, const Array *a2) const {
+    return a1->name < a2->name;
+  }
+};
+}
+
+void ExprPPrinter::printQuery(llvm::raw_ostream &os,
                               const ConstraintManager &constraints,
                               const ref<Expr> &q,
                               const ref<Expr> *evalExprsBegin,
@@ -532,13 +509,15 @@ void ExprPPrinter::printQuery(std::ostream &os,
   if (printArrayDecls) {
     for (const Array * const* it = evalArraysBegin; it != evalArraysEnd; ++it)
       p.usedArrays.insert(*it);
-    for (std::set<const Array*>::iterator it = p.usedArrays.begin(), 
-           ie = p.usedArrays.end(); it != ie; ++it) {
+    std::vector<const Array *> sortedArray(p.usedArrays.begin(),
+                                           p.usedArrays.end());
+    std::sort(sortedArray.begin(), sortedArray.end(), ArrayPtrsByName());
+    for (std::vector<const Array *>::iterator it = sortedArray.begin(),
+                                              ie = sortedArray.end();
+         it != ie; ++it) {
       const Array *A = *it;
-      // FIXME: Print correct name, domain, and range.
-      PC << "array " << A->name
-         << "[" << A->size << "]"
-         << " : " << "w32" << " -> " << "w8" << " = ";
+      PC << "array " << A->name << "[" << A->size << "]"
+         << " : w" << A->domain << " -> w" << A->range << " = ";
       if (A->isSymbolicArray()) {
         PC << "symbolic";
       } else {

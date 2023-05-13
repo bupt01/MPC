@@ -1,0 +1,122 @@
+MEMORY-ORDER CONSTRAINTS -----
+READ-WRITE CONSTRAINTS WITH SIMPLIFY -----
+PATH CONSTRAINTS -----
+LOCKING CONSTRAINTS -----
+FORK-START CONSTRAINTS -----
+JOIN-EXIT CONSTRAINTS -----
+WAIT-SIGNAL CONSTRAINTS -----
+sat
+(model 
+  (define-fun InitR-T2*thread_2_3_ret*pthread_mutex_lock2__64005264*0 () Int
+    72)
+  (define-fun OS-lock_0x3e4a400l-2-0&prog2.c@29 () Int
+    11)
+  (define-fun R-T0*main_shared*x_64013416*8-1-0 () Int
+    0)
+  (define-fun OR-T0*main_shared*x_64013412*4-1-1&prog2.c@20 () Int
+    24)
+  (define-fun OR-T0*main_ret*pthread_create1__64005064*0-0-0&prog2.c@57 () Int
+    0)
+  (define-fun OR-T0*main_shared*x_64013416*8-2-0&prog2.c@31 () Int
+    12)
+  (define-fun OR-T0*main_shared*x_64013416*8-2-1&prog2.c@33 () Int
+    15)
+  (define-fun InitR-T1*thread_1_2_ret*pthread_mutex_lock1__64005432*0 () Int
+    69)
+  (define-fun OS-exit-0&prog2.c@131 () Int
+    31)
+  (define-fun InitR-T0*main_ret*pthread_create2__64005104*0 () Int
+    64)
+  (define-fun InitR-T1*thread_1_2_i_64005312*0 () Int
+    0)
+  (define-fun OS-lock_0x3e4a420l-2-0&prog2.c@28 () Int
+    9)
+  (define-fun R-T0*main_shared*x_64013420*12-2-0 () Int
+    68)
+  (define-fun R-T1*thread_1_2_ret*pthread_mutex_lock2__64005480*0-1-0 () Int
+    70)
+  (define-fun R-T2*thread_2_3_ret*pthread_mutex_lock1__64005216*0-2-0 () Int
+    71)
+  (define-fun OS-start-2&prog2.c@26 () Int
+    7)
+  (define-fun InitR-T0*main_shared*x_64013420*12 () Int
+    68)
+  (define-fun InitR-T0*main_shared*x_64013416*8 () Int
+    0)
+  (define-fun OS-join_2-0-0&prog2.c@130 () Int
+    30)
+  (define-fun OS-unlock_0x3e4a400l-2-0&prog2.c@35 () Int
+    16)
+  (define-fun OS-exit-1&prog2.c@24 () Int
+    27)
+  (define-fun InitR-T0*main_shared*x_64013412*4 () Int
+    65)
+  (define-fun OR-T2*thread_2_3_ret*pthread_mutex_lock1__64005216*0-2-0&prog2.c@29 () Int
+    8)
+  (define-fun InitR-T0*main_ret*pthread_create1__64005064*0 () Int
+    63)
+  (define-fun InitR-T1*thread_1_2_ret*pthread_mutex_lock2__64005480*0 () Int
+    70)
+  (define-fun OS-unlock_0x3e4a420l-1-0&prog2.c@22 () Int
+    25)
+  (define-fun OR-T1*thread_1_2_ret*pthread_mutex_lock2__64005480*0-1-0&prog2.c@17 () Int
+    18)
+  (define-fun OS-unlock_0x3e4a400l-1-0&prog2.c@23 () Int
+    26)
+  (define-fun OR-T2*thread_2_3_ret*pthread_mutex_lock2__64005264*0-2-0&prog2.c@30 () Int
+    10)
+  (define-fun OS-exit-2&prog2.c@37 () Int
+    29)
+  (define-fun OS-join_1-0-0&prog2.c@129 () Int
+    28)
+  (define-fun OW-T0*main_shared*x_64013420*12-2-0&prog2.c@32 () Int
+    14)
+  (define-fun OS-fork_1-0-0&prog2.c@57 () Int
+    1)
+  (define-fun OS-fork_2-0-0&prog2.c@58 () Int
+    3)
+  (define-fun OR-T1*thread_1_2_i_64005312*0-1-1&prog2.c@15 () Int
+    5)
+  (define-fun OR-T1*thread_1_2_ret*pthread_mutex_lock1__64005432*0-1-0&prog2.c@16 () Int
+    6)
+  (define-fun OS-unlock_0x3e4a420l-2-0&prog2.c@36 () Int
+    19)
+  (define-fun R-T0*main_ret*pthread_create2__64005104*0-0-0 () Int
+    64)
+  (define-fun R-T0*main_shared*x_64013416*8-2-0 () Int
+    0)
+  (define-fun R-T0*main_shared*x_64013416*8-2-1 () Int
+    0)
+  (define-fun R-T1*thread_1_2_ret*pthread_mutex_lock1__64005432*0-1-0 () Int
+    69)
+  (define-fun OS-start-1&prog2.c@13 () Int
+    4)
+  (define-fun R-T0*main_ret*pthread_create1__64005064*0-0-0 () Int
+    63)
+  (define-fun OR-T0*main_shared*x_64013412*4-1-0&prog2.c@18 () Int
+    21)
+  (define-fun InitR-T2*thread_2_3_ret*pthread_mutex_lock1__64005216*0 () Int
+    71)
+  (define-fun R-T0*main_shared*x_64013412*4-1-1 () Int
+    65)
+  (define-fun OR-T0*main_ret*pthread_create2__64005104*0-0-0&prog2.c@58 () Int
+    2)
+  (define-fun R-T0*main_shared*x_64013412*4-1-0 () Int
+    65)
+  (define-fun R-T2*thread_2_3_ret*pthread_mutex_lock2__64005264*0-2-0 () Int
+    72)
+  (define-fun OW-T0*main_shared*x_64013416*8-1-0&prog2.c@19 () Int
+    23)
+  (define-fun R-T1*thread_1_2_i_64005312*0-1-1 () Int
+    0)
+  (define-fun OS-lock_0x3e4a400l-1-0&prog2.c@15 () Int
+    17)
+  (define-fun OR-T0*main_shared*x_64013420*12-2-0&prog2.c@32 () Int
+    13)
+  (define-fun OR-T0*main_shared*x_64013416*8-1-0&prog2.c@19 () Int
+    22)
+  (define-fun OS-lock_0x3e4a420l-1-0&prog2.c@16 () Int
+    20)
+)
+(error "line 229 column 15: unsat core is not available")
+end

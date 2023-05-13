@@ -7,22 +7,28 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <string.h>
-#include <stdio.h>
+#ifdef __FreeBSD__
+#include "FreeBSD.h"
+#endif
 #include <errno.h>
-#include <signal.h>
-#include <time.h>
-#include <utime.h>
-#include <utmp.h>
-#include <unistd.h>
 #include <limits.h>
+#include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+#include <utime.h>
+#ifndef __FreeBSD__
+#include <utmp.h>
+#endif
 #include <sys/mman.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/resource.h>
 
 #include "klee/Config/config.h"
 
@@ -31,20 +37,20 @@ void klee_warning_once(const char*);
 
 /* Silent ignore */
 
-int __syscall_rt_sigaction(int signum, const struct sigaction *act, 
+int __syscall_rt_sigaction(int signum, const struct sigaction *act,
                            struct sigaction *oldact, size_t _something)
      __attribute__((weak));
 
-int __syscall_rt_sigaction(int signum, const struct sigaction *act, 
+int __syscall_rt_sigaction(int signum, const struct sigaction *act,
                            struct sigaction *oldact, size_t _something) {
   klee_warning_once("silently ignoring");
   return 0;
 }
 
-int sigaction(int signum, const struct sigaction *act, 
+int sigaction(int signum, const struct sigaction *act,
               struct sigaction *oldact) __attribute__((weak));
 
-int sigaction(int signum, const struct sigaction *act, 
+int sigaction(int signum, const struct sigaction *act,
               struct sigaction *oldact) {
   klee_warning_once("silently ignoring");
   return 0;
@@ -122,21 +128,21 @@ int link(const char *oldpath, const char *newpath) __attribute__((weak));
 int link(const char *oldpath, const char *newpath) {
   klee_warning("ignoring (EPERM)");
   errno = EPERM;
-  return -1;  
+  return -1;
 }
 
 int symlink(const char *oldpath, const char *newpath) __attribute__((weak));
 int symlink(const char *oldpath, const char *newpath) {
   klee_warning("ignoring (EPERM)");
   errno = EPERM;
-  return -1;  
+  return -1;
 }
 
 int rename(const char *oldpath, const char *newpath) __attribute__((weak));
 int rename(const char *oldpath, const char *newpath) {
   klee_warning("ignoring (EPERM)");
   errno = EPERM;
-  return -1;  
+  return -1;
 }
 
 int nanosleep(const struct timespec *req, struct timespec *rem) __attribute__((weak));
@@ -172,13 +178,19 @@ time_t time(time_t *t) {
 
 clock_t times(struct tms *buf) {
   /* Fake */
-  buf->tms_utime = 0;
-  buf->tms_stime = 0;
-  buf->tms_cutime = 0;
-  buf->tms_cstime = 0;
+  if (!buf)
+    klee_warning("returning 0\n");
+  else {
+    klee_warning("setting all times to 0 and returning 0\n");
+    buf->tms_utime = 0;
+    buf->tms_stime = 0;
+    buf->tms_cutime = 0;
+    buf->tms_cstime = 0;
+  }
   return 0;
 }
 
+#ifndef __FreeBSD__
 struct utmpx *getutxent(void) __attribute__((weak));
 struct utmpx *getutxent(void) {
   return (struct utmpx*) getutent();
@@ -199,6 +211,7 @@ int utmpxname(const char *file) {
   utmpname(file);
   return 0;
 }
+#endif
 
 int euidaccess(const char *pathname, int mode) __attribute__((weak));
 int euidaccess(const char *pathname, int mode) {
@@ -222,13 +235,6 @@ int utime(const char *filename, const struct utimbuf *buf) {
   return -1;
 }
 
-int utimes(const char *filename, const struct timeval times[2]) __attribute__((weak));
-int utimes(const char *filename, const struct timeval times[2]) {
-  klee_warning("ignoring (EPERM)");
-  errno = EPERM;
-  return -1;
-}
-
 int futimes(int fd, const struct timeval times[2]) __attribute__((weak));
 int futimes(int fd, const struct timeval times[2]) {
   klee_warning("ignoring (EBADF)");
@@ -240,30 +246,40 @@ int strverscmp (__const char *__s1, __const char *__s2) {
   return strcmp(__s1, __s2); /* XXX no doubt this is bad */
 }
 
-unsigned int gnu_dev_major(unsigned long long int __dev) __attribute__((weak));
-unsigned int gnu_dev_major(unsigned long long int __dev) {
+#if __GLIBC_PREREQ(2, 25)
+#define gnu_dev_type	dev_t
+#else
+#define gnu_dev_type	unsigned long long int
+#endif
+
+unsigned int gnu_dev_major(gnu_dev_type __dev) __attribute__((weak));
+unsigned int gnu_dev_major(gnu_dev_type __dev) {
   return ((__dev >> 8) & 0xfff) | ((unsigned int) (__dev >> 32) & ~0xfff);
 }
 
-unsigned int gnu_dev_minor(unsigned long long int __dev) __attribute__((weak));
-unsigned int gnu_dev_minor(unsigned long long int __dev) {
+unsigned int gnu_dev_minor(gnu_dev_type __dev) __attribute__((weak));
+unsigned int gnu_dev_minor(gnu_dev_type __dev) {
   return (__dev & 0xff) | ((unsigned int) (__dev >> 12) & ~0xff);
 }
 
-unsigned long long int gnu_dev_makedev(unsigned int __major, unsigned int __minor) __attribute__((weak));
-unsigned long long int gnu_dev_makedev(unsigned int __major, unsigned int __minor) {
+gnu_dev_type gnu_dev_makedev(unsigned int __major, unsigned int __minor) __attribute__((weak));
+gnu_dev_type gnu_dev_makedev(unsigned int __major, unsigned int __minor) {
   return ((__minor & 0xff) | ((__major & 0xfff) << 8)
-	  | (((unsigned long long int) (__minor & ~0xff)) << 12)
-	  | (((unsigned long long int) (__major & ~0xfff)) << 32));
+          | (((gnu_dev_type) (__minor & ~0xff)) << 12)
+          | (((gnu_dev_type) (__major & ~0xfff)) << 32));
 }
 
 char *canonicalize_file_name (const char *name) __attribute__((weak));
 char *canonicalize_file_name (const char *name) {
-  char *res = malloc(PATH_MAX);
-  char *rp_res = realpath(name, res);
-  if (!rp_res)
-    free(res);
-  return rp_res;
+  // Although many C libraries allocate resolved_name in realpath() if it is NULL,
+  // this behaviour is implementation-defined (POSIX) and not implemented in uclibc.
+  char * resolved_name = malloc(PATH_MAX);
+  if (!resolved_name) return NULL;
+  if (!realpath(name, resolved_name)) {
+    free(resolved_name);
+    return NULL;
+  }
+  return resolved_name;
 }
 
 int getloadavg(double loadavg[], int nelem) __attribute__((weak));
@@ -401,8 +417,14 @@ int umount2(const char *target, int flags) {
   return -1;
 }
 
+#ifndef __FreeBSD__
 int swapon(const char *path, int swapflags) __attribute__((weak));
 int swapon(const char *path, int swapflags) {
+#else
+int swapon(const char *path)__attribute__((weak));
+int swapon(const char *path)
+{
+#endif
   klee_warning("ignoring (EPERM)");
   errno = EPERM;
   return -1;
@@ -421,15 +443,25 @@ int setgid(gid_t gid) {
   return 0;
 }
 
+#ifndef __FreeBSD__
 int setgroups(size_t size, const gid_t *list) __attribute__((weak));
 int setgroups(size_t size, const gid_t *list) {
+#else
+int setgroups(int size, const gid_t *list) __attribute__((weak));
+int setgroups(int size, const gid_t *list) {
+#endif
   klee_warning("ignoring (EPERM)");
   errno = EPERM;
   return -1;
 }
 
+#ifndef __FreeBSD__
 int sethostname(const char *name, size_t len) __attribute__((weak));
 int sethostname(const char *name, size_t len) {
+#else
+int sethostname(const char *name, int len) __attribute__((weak));
+int sethostname(const char *name, int len) {
+#endif
   klee_warning("ignoring (EPERM)");
   errno = EPERM;
   return -1;
@@ -442,15 +474,25 @@ int setpgid(pid_t pid, pid_t pgid) {
   return -1;
 }
 
+#ifndef __FreeBSD__
 int setpgrp(void) __attribute__((weak));
 int setpgrp(void) {
+#else
+int setpgrp(pid_t a, pid_t b) __attribute__((weak));
+int setpgrp(pid_t a, pid_t b) {
+#endif
   klee_warning("ignoring (EPERM)");
   errno = EPERM;
   return -1;
 }
 
+#ifndef __FreeBSD__
 int setpriority(__priority_which_t which, id_t who, int prio) __attribute__((weak));
 int setpriority(__priority_which_t which, id_t who, int prio) {
+#else
+int setpriority(int which, int who, int prio) __attribute__((weak));
+int setpriority(int which, int who, int prio) {
+#endif
   klee_warning("ignoring (EPERM)");
   errno = EPERM;
   return -1;
@@ -470,19 +512,26 @@ int setresuid(uid_t ruid, uid_t euid, uid_t suid) {
   return -1;
 }
 
+#ifndef __FreeBSD__
 int setrlimit(__rlimit_resource_t resource, const struct rlimit *rlim) __attribute__((weak));
 int setrlimit(__rlimit_resource_t resource, const struct rlimit *rlim) {
+#else
+int setrlimit(int resource, const struct rlimit *rlp) __attribute__((weak));
+int setrlimit(int resource, const struct rlimit *rlp) {
+#endif
   klee_warning("ignoring (EPERM)");
   errno = EPERM;
   return -1;
 }
 
+#ifndef __FreeBSD__
 int setrlimit64(__rlimit_resource_t resource, const struct rlimit64 *rlim) __attribute__((weak));
 int setrlimit64(__rlimit_resource_t resource, const struct rlimit64 *rlim) {
   klee_warning("ignoring (EPERM)");
   errno = EPERM;
   return -1;
 }
+#endif
 
 pid_t setsid(void) __attribute__((weak));
 pid_t setsid(void) {

@@ -1,0 +1,20 @@
+<PathString> 1
+<readwrite>
+O5 prog2.c@26:S-start-2
+O7 prog2.c@29:R-T2*thread_2_3_ret*pthread_mutex_lock1__66659472*0-2-0
+O8 prog2.c@28:S-lock_0x40d2420l_2-2
+O10 prog2.c@30:R-T2*thread_2_3_ret*pthread_mutex_lock2__66659504*0-2-0
+O11 prog2.c@29:S-lock_0x40d2400l_1-2
+O12 prog2.c@31:R-T0*main_shared*x_66667624*8-2-0
+O14 prog2.c@32:R-T0*main_shared*x_66667628*12-2-0
+O15 prog2.c@32:W-T0*main_shared*x_66667628*12-2
+$(Add w32 1
+          (ReadLSB w32 0 T0*main_shared*x_66667628*12-2-0))$
+O16 prog2.c@33:R-T0*main_shared*x_66667624*8-2-1
+Path: 1
+O17 prog2.c@35:S-unlock_0x40d2400l_1-2
+O18 prog2.c@36:S-unlock_0x40d2420l_2-2
+<path>
+T2:(Eq (ReadLSB w32 0 T0*main_shared*x_66667624*8-2-0)
+     (ReadLSB w32 0 T0*main_shared*x_66667624*8-2-1))
+34 0

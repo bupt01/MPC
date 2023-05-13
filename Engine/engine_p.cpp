@@ -185,7 +185,7 @@ bool checkSolverState(pid_t pid) {
 
 string INSTALL_PATH = getenv("INSTALL_PATH");
 int main(int argc, char *const* argv) {
-	
+	std::cout<<"coming"<<std::endl;
 	double beginTime = clock();
 	int pathNum = 0;
 	parse_args(argc, argv);

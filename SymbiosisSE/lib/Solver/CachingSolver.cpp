@@ -8,16 +8,15 @@
 //===----------------------------------------------------------------------===//
 
 
-#include "klee/Solver.h"
+#include "klee/Solver/Solver.h"
 
-#include "klee/Constraints.h"
-#include "klee/Expr.h"
-#include "klee/IncompleteSolver.h"
-#include "klee/SolverImpl.h"
+#include "klee/Expr/Constraints.h"
+#include "klee/Expr/Expr.h"
+#include "klee/Solver/IncompleteSolver.h"
+#include "klee/Solver/SolverImpl.h"
+#include "klee/Solver/SolverStats.h"
 
-#include "SolverStats.h"
-
-#include <tr1/unordered_map>
+#include <unordered_map>
 
 using namespace klee;
 
@@ -46,23 +45,23 @@ private:
       return constraints==b.constraints && *query.get()==*b.query.get();
     }
   };
-  
+
   struct CacheEntryHash {
     unsigned operator()(const CacheEntry &ce) const {
       unsigned result = ce.query->hash();
-      
-      for (ConstraintManager::constraint_iterator it = ce.constraints.begin();
-           it != ce.constraints.end(); ++it)
-        result ^= (*it)->hash();
-      
+
+      for (auto const &constraint : ce.constraints) {
+        result ^= constraint->hash();
+      }
+
       return result;
     }
   };
 
-  typedef std::tr1::unordered_map<CacheEntry, 
-                                  IncompleteSolver::PartialValidity, 
-                                  CacheEntryHash> cache_map;
-  
+  typedef std::unordered_map<CacheEntry, IncompleteSolver::PartialValidity,
+                             CacheEntryHash>
+      cache_map;
+
   Solver *solver;
   cache_map cache;
 
@@ -73,15 +72,20 @@ public:
   bool computeValidity(const Query&, Solver::Validity &result);
   bool computeTruth(const Query&, bool &isValid);
   bool computeValue(const Query& query, ref<Expr> &result) {
+    ++stats::queryCacheMisses;
     return solver->impl->computeValue(query, result);
   }
   bool computeInitialValues(const Query& query,
                             const std::vector<const Array*> &objects,
                             std::vector< std::vector<unsigned char> > &values,
                             bool &hasSolution) {
+    ++stats::queryCacheMisses;
     return solver->impl->computeInitialValues(query, objects, values, 
                                               hasSolution);
   }
+  SolverRunStatus getOperationStatusCode();
+  char *getConstraintLog(const Query&);
+  void setCoreSolverTimeout(time::Span timeout);
 };
 
 /** @returns the canonical version of the given query.  The reference
@@ -140,19 +144,21 @@ bool CachingSolver::computeValidity(const Query& query,
   bool tmp, cacheHit = cacheLookup(query, cachedResult);
   
   if (cacheHit) {
-    ++stats::queryCacheHits;
-
     switch(cachedResult) {
     case IncompleteSolver::MustBeTrue:   
       result = Solver::True;
+      ++stats::queryCacheHits;
       return true;
     case IncompleteSolver::MustBeFalse:  
       result = Solver::False;
+      ++stats::queryCacheHits;
       return true;
     case IncompleteSolver::TrueOrFalse:  
       result = Solver::Unknown;
+      ++stats::queryCacheHits;
       return true;
     case IncompleteSolver::MayBeTrue: {
+      ++stats::queryCacheMisses;
       if (!solver->impl->computeTruth(query, tmp))
         return false;
       if (tmp) {
@@ -166,6 +172,7 @@ bool CachingSolver::computeValidity(const Query& query,
       }
     }
     case IncompleteSolver::MayBeFalse: {
+      ++stats::queryCacheMisses;
       if (!solver->impl->computeTruth(query.negateExpr(), tmp))
         return false;
       if (tmp) {
@@ -232,6 +239,18 @@ bool CachingSolver::computeTruth(const Query& query,
   
   cacheInsert(query, cachedResult);
   return true;
+}
+
+SolverImpl::SolverRunStatus CachingSolver::getOperationStatusCode() {
+  return solver->impl->getOperationStatusCode();
+}
+
+char *CachingSolver::getConstraintLog(const Query& query) {
+  return solver->impl->getConstraintLog(query);
+}
+
+void CachingSolver::setCoreSolverTimeout(time::Span timeout) {
+  solver->impl->setCoreSolverTimeout(timeout);
 }
 
 ///

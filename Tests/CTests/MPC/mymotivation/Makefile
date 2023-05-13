@@ -1,18 +1,18 @@
-CC=/usr/bin/clang
+CC=/home/llvm-project/build/bin/clang
 CFLAGS=-g
 LDFLAGS=-lpthread
 
-LLVM_CC=llvm-gcc
+LLVM_CC=/home/llvm-project/build/bin/clang
 LLVM_LLC=llc
-LLVM_OPT=opt
+LLVM_OPT=/home/llvm-project/build/bin/opt
 LLVM_LINK=llvm-link
-SYMB_PASS=$(INSTALL_PATH)/llvm-2.9/Release+Asserts/lib/SymbiosisBBPass.so
+SYMB_PASS=/home/llvm-project/build/lib/SymbiosisBBPass.so
 
 all: plain
 
 KLEE0:
 	$(LLVM_CC) -emit-llvm -c -g M0.c -o M0.bc
-	$(LLVM_OPT) -load $(SYMB_PASS) -symbiosisBB M0.bc -o M0_inst.bc
+	$(LLVM_OPT) -load $(SYMB_PASS) --symbiosisBB M0.bc -o M0_inst.bc
 
 KLEE1:
 	$(LLVM_CC) -emit-llvm -c -g M1.c -o M1.bc
@@ -35,8 +35,8 @@ KLEE9:
 	$(LLVM_OPT) -load $(SYMB_PASS) -symbiosisBB M9.bc -o M9_inst.bc
 
 test:
-	$(LLVM_CC) -emit-llvm -c -g test.c -o test.bc
-	$(LLVM_OPT) -load $(SYMB_PASS) -symbiosisBB test.bc -o test_inst.bc
+	$(LLVM_CC) -emit-llvm -c -g prog2.c -o prog2.bc
+	$(LLVM_OPT) -load $(SYMB_PASS) -symbiosisBB prog2.bc -o prog2_inst.bc
 
 clean:
 	-rm *.o *.s *.ll *.bc klee-out-* CheckedPath* index_* result* paralleled *.bc -rf

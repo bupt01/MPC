@@ -1,0 +1,531 @@
+nohup: ignoring input
+cmd: time /home/symbiosis-master/SymbiosisSE/build/bin/klee --bb-trace=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/example.trace.fail /home/symbiosis-master/Tests/CTests/MPC/mymotivation/prog2_inst.bc --times=0 --index=0 --last=0 --trace=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/
+KLEE: output directory = " 0 0"
+KLEE: output directory is "/home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-out-0"
+KLEE: Using STP solver backend
+KLEE: WARNING: undefined reference to function: myAssert
+KLEE: WARNING: undefined reference to function: myPThreadCreate
+KLEE: WARNING: undefined reference to function: pthread_create
+KLEE: WARNING: undefined reference to function: pthread_join
+KLEE: WARNING: undefined reference to function: pthread_mutex_lock
+KLEE: WARNING: undefined reference to function: pthread_mutex_unlock
+replayOutDir:ktest file
+seeds'size is :0
+filename:index_0
+>> Read Order File: index_0
+Note: Execute without the guide of readOrderFile!: index_0
+create thread
+create thread
+[1] terminateStateOnExit ----- 
+[1_-1] terminateStateCLAPWithConstraints
+Thread 1 0x3fcf500 terminated. Flush Constraint Trace
+Elapsed Time: 716s
+------------------
+[0] terminateStateOnExit ----- 
+[0_-1] terminateStateCLAPWithConstraints
+Thread 0 0x3fcec00 terminated. Flush Constraint Trace
+Elapsed Time: 857s
+------------------
+[2] terminateStateOnExit ----- 
+[2_-1] terminateStateCLAPWithConstraints
+Thread 2 0x3fcfb00 terminated. Flush Constraint Trace
+Elapsed Time: 1118s
+------------------
+
+KLEE: done: total instructions = 56
+KLEE: done: completed paths = 3
+KLEE: done: generated tests = 3
+0.01user 0.00system 0:00.02elapsed 95%CPU (0avgtext+0avgdata 30868maxresident)k
+0inputs+224outputs (8major+1923minor)pagefaults 0swaps
+cmd01:time /home/symbiosis-master/SymbiosisSolver/symbiosisSolver --trace-folder=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-last --model=/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt --solution=/home/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt --with-solver=/home/z3-z3-4.8.8/build/z3 --parallel=0 --times=1795525 --last=0 --solutions=1 --trace=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/  --bcfile=prog2_inst.bc
+# MODE: FIND BUG-TRIGGERING SCHEDULE
+# CONTEXT SWITCH REDUCTION: off
+# DSP:		(options = extended, short, "")
+# SYMBOLIC TRACES: /home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-last
+# SOLVER: /home/z3-z3-4.8.8/build/z3
+# CONSTRAINT MODEL: /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt
+# SOLUTION: /home/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt
+
+[Solver] Init solver... /home/z3-z3-4.8.8/build/z3 -T:30 -smt2 -in 
+[Solver] create Z3 pid 1795565
+
+---- ATTEMPT 0 3
+>> Parsing T0_-1
+>> Parsing T1_-1
+>> Parsing T2_-1
+->Error opening fileCheckedPath.
+MaxNum: 3
+外环
+first:1second0
+first:2second0
+外环
+first:1second0
+first:2second1
+外环
+first:1second1
+first:2second0
+外环
+first:2second1
+first:1second1
+
+-- READ SET
+[0] R-T0*main_ret*pthread_create1__66659256*0-0&prog2.c@57
+[0] R-T0*main_ret*pthread_create2__66659336*0-0&prog2.c@58
+[2] R-T0*main_shared*x_66667624*8-0&prog2.c@31
+[2] R-T0*main_shared*x_66667624*8-1&prog2.c@33
+[2] R-T0*main_shared*x_66667628*12-0&prog2.c@32
+[1] R-T1*thread_1_2_i_66659312*0-1&prog2.c@15
+[2] R-T2*thread_2_3_ret*pthread_mutex_lock1__66659472*0-0&prog2.c@29
+[2] R-T2*thread_2_3_ret*pthread_mutex_lock2__66659504*0-0&prog2.c@30
+
+-- WRITE SET
+[2] W-T0*main_shared*x_66667628*12-0 = $(Add w32 1          (ReadLSB w32 0 T0*main_shared*x_66667628*12-2-0))$&prog2.c@32
+
+-- LOCKPAIR SET
+[2] 0x40d2400l-0/0&prog2.cLock@29 Unlock@35
+[2] 0x40d2420l-0/0&prog2.cLock@28 Unlock@36
+
+-- WAIT SET
+
+-- SIGNAL SET
+
+-- FORK SET
+[0] fork_1-0&prog2.c@57
+[0] fork_2-0&prog2.c@58
+
+-- JOIN SET
+[0] join_1-0&prog2.c@129
+[0] join_2-0&prog2.c@130
+
+-- START SET
+[1] start&prog2.c@13
+[2] start&prog2.c@26
+
+-- EXIT SET
+0
+[0] exit&prog2.c@131
+1
+[1] exit&prog2.c@16
+2
+[2] exit&prog2.c@37
+
+-- PATH SET
+[1]: (Eq false (Eq 0 (ReadLSB w32 0 T1*thread_1_2_i_66659312*0-1-1)))
+[2]: (Eq (ReadLSB w32 0 T0*main_shared*x_66667624*8-2-0) (ReadLSB w32 0 T0*main_shared*x_66667624*8-2-1))
+
+### OPERATIONS BY THREAD
+-- Thread 0
+[0] R-T0*main_ret*pthread_create1__66659256*0-0&prog2.c@57
+[0] fork_1-0&prog2.c@57
+[0] R-T0*main_ret*pthread_create2__66659336*0-0&prog2.c@58
+[0] fork_2-0&prog2.c@58
+[0] join_1-0&prog2.c@129
+[0] join_2-0&prog2.c@130
+[0] exit&prog2.c@131
+-- Thread 1
+[1] start&prog2.c@13
+[1] R-T1*thread_1_2_i_66659312*0-1&prog2.c@15
+[1] exit&prog2.c@16
+-- Thread 2
+[2] start&prog2.c@26
+[2] R-T2*thread_2_3_ret*pthread_mutex_lock1__66659472*0-0&prog2.c@29
+[2] lock_0x40d2420l-0&prog2.c@28
+[2] R-T2*thread_2_3_ret*pthread_mutex_lock2__66659504*0-0&prog2.c@30
+[2] lock_0x40d2400l-0&prog2.c@29
+[2] R-T0*main_shared*x_66667624*8-0&prog2.c@31
+[2] R-T0*main_shared*x_66667628*12-0&prog2.c@32
+[2] W-T0*main_shared*x_66667628*12-0 = $(Add w32 1          (ReadLSB w32 0 T0*main_shared*x_66667628*12-2-0))$&prog2.c@32
+[2] R-T0*main_shared*x_66667624*8-1&prog2.c@33
+[2] unlock_0x40d2400l-0&prog2.c@35
+[2] unlock_0x40d2420l-0&prog2.c@36
+[2] exit&prog2.c@37
+size is4
+size 034
+expr is(Eq false (Eq false (Eq 0 (ReadLSB w32 0 T1*thread_1_2_i_66659312*0-1-1))))
+expr is(Eq false (Eq (ReadLSB w32 0 T0*main_shared*x_66667624*8-2-0) (ReadLSB w32 0 T0*main_shared*x_66667624*8-2-1)))
+
+### GENERATING CONSTRAINT MODEL11: 0
+Opening file: /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_0
+[Solver] Adding memory-order constraints...
+[Solver] Adding read-write constraints...
+[Solver] Adding path constraints1111... 1795525_1
+[Solver] Adding locking-order constraints...
+[Solver] Adding fork/start constraints...
+[Solver] Adding join/exit constraints...
+num is2
+(echo "JOIN-EXIT CONSTRAINTS -----")
+
+(assert (! (> OS-join_1-0-0&prog2.c@129 OS-exit-1&prog2.c@16):named JEC0))
+
+(assert (! (> OS-join_2-0-0&prog2.c@130 OS-exit-2&prog2.c@37):named JEC1))
+
+
+[Solver] Adding wait/signal constraints...
+
+### SOLVING CONSTRAINT MODEL: Z3
+   TYPE	| #CONSTRAINTS
+--------------------------
+Memory	|	22	(0.628571%)
+ReadWrite	|	7	(0.2%)
+Locking	|	0	(0%)
+PartialOrd	|	4	(0.114286%)
+Path		|	2	(0.0571429%)
+
+>> #CONSTRAINTS: 35
+>> #UNKNOWN VARS: 30
+
+cmd isnohup /home/z3-z3-4.8.8/build/z3 -T:30 -smt2 /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_0 > /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_0_solution
+[Solver] Model Satisfiability: unsat
+[Solver] (error "line 155 column 10: model is not available")
+file is:/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_0
+file:rm /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_0 /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_0_solution -rfsuccess:0
+size 034
+expr is(Eq false (Eq false (Eq 0 (ReadLSB w32 0 T1*thread_1_2_i_66659312*0-1-1))))
+
+### GENERATING CONSTRAINT MODEL11: 1
+Opening file: /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_1
+[Solver] Adding memory-order constraints...
+[Solver] Adding read-write constraints...
+[Solver] Adding path constraints1111... 1795525_1
+[Solver] Adding locking-order constraints...
+[Solver] Adding fork/start constraints...
+[Solver] Adding join/exit constraints...
+(echo "JOIN-EXIT CONSTRAINTS -----")
+
+(assert (! (> OS-join_1-0-0&prog2.c@129 OS-exit-1&prog2.c@16):named JEC0))
+
+(assert (! (> OS-join_2-0-0&prog2.c@130 OS-exit-2&prog2.c@37):named JEC1))
+
+
+[Solver] Adding wait/signal constraints...
+
+### SOLVING CONSTRAINT MODEL: Z3
+   TYPE	| #CONSTRAINTS
+--------------------------
+Memory	|	22	(0.709677%)
+ReadWrite	|	7	(0.225806%)
+Locking	|	0	(0%)
+PartialOrd	|	0	(0%)
+Path		|	2	(0.0645161%)
+
+>> #CONSTRAINTS: 31
+>> #UNKNOWN VARS: 30
+
+cmd isnohup /home/z3-z3-4.8.8/build/z3 -T:30 -smt2 /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_1 > /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_1_solution
+[Solver] Model Satisfiability: sat
+[Solver] (error "line 157 column 15: unsat core is not available")
+[Solver] Solution found in 0s:
+
+file is:/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_1
+file:rm /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_1 /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_1_solution -rfsuccess:1
+size 034
+expr is(Eq false (Eq (ReadLSB w32 0 T0*main_shared*x_66667624*8-2-0) (ReadLSB w32 0 T0*main_shared*x_66667624*8-2-1)))
+
+### GENERATING CONSTRAINT MODEL11: 2
+Opening file: /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_2
+[Solver] Adding memory-order constraints...
+[Solver] Adding read-write constraints...
+[Solver] Adding path constraints1111... 1795525_2
+[Solver] Adding locking-order constraints...
+[Solver] Adding fork/start constraints...
+[Solver] Adding join/exit constraints...
+(echo "JOIN-EXIT CONSTRAINTS -----")
+
+(assert (! (> OS-join_1-0-0&prog2.c@129 OS-exit-1&prog2.c@16):named JEC0))
+
+(assert (! (> OS-join_2-0-0&prog2.c@130 OS-exit-2&prog2.c@37):named JEC1))
+
+
+[Solver] Adding wait/signal constraints...
+
+### SOLVING CONSTRAINT MODEL: Z3
+   TYPE	| #CONSTRAINTS
+--------------------------
+Memory	|	22	(0.709677%)
+ReadWrite	|	7	(0.225806%)
+Locking	|	0	(0%)
+PartialOrd	|	0	(0%)
+Path		|	2	(0.0645161%)
+
+>> #CONSTRAINTS: 31
+>> #UNKNOWN VARS: 30
+
+cmd isnohup /home/z3-z3-4.8.8/build/z3 -T:30 -smt2 /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_2 > /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_2_solution
+[Solver] Model Satisfiability: unsat
+[Solver] (error "line 155 column 10: model is not available")
+file is:/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_2
+file:rm /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_2 /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_2_solution -rfsuccess:0
+size 034
+
+### GENERATING CONSTRAINT MODEL11: 3
+>> Extract AV From File /home/symbiosis-master/Tests/CTests/MPC/mymotivation/prog1
+[Solver] Init solver... /home/z3-z3-4.8.8/build/z3 -T:30 -smt2 -in 
+[Solver] create Z3 pid 1795602
+atoConstarint:
+Opening file: /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_3
+[Solver] Adding memory-order constraints...
+[Solver] Adding read-write constraints...
+[Solver] Adding path constraints1111... 1795525_2
+[Solver] Adding locking-order constraints...
+[Solver] Adding fork/start constraints...
+[Solver] Adding join/exit constraints...
+[Solver] Adding wait/signal constraints...
+[Solver] Adding AV constraints...
+
+### SOLVING CONSTRAINT MODEL: Z3
+   TYPE	| #CONSTRAINTS
+--------------------------
+Memory	|	22	(0.709677%)
+ReadWrite	|	7	(0.225806%)
+Locking	|	0	(0%)
+PartialOrd	|	0	(0%)
+Path		|	2	(0.0645161%)
+
+>> #CONSTRAINTS: 31
+>> #UNKNOWN VARS: 30
+
+cmd isnohup /home/z3-z3-4.8.8/build/z3 -T:30 -smt2 /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_3 > /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_3_solution
+[Solver] Model Satisfiability: sat
+[Solver] (error "line 157 column 15: unsat core is not available")
+[Solver] Solution found in 0s:
+
+file is:/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_3
+file:rm /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_3 /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795564_1795525_3_solution -rfsuccess:1
+>> Killing Z3 pid 1795565 and 1795566
+Command exited with non-zero status 1
+0.09user 0.04system 0:00.17elapsed 83%CPU (0avgtext+0avgdata 17832maxresident)k
+0inputs+160outputs (0major+9243minor)pagefaults 0swaps
+dirFile/home/symbiosis-master/SymbiosisSolver/tmp/
+cmd_while:mv /home/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt_yqp_1795525_1795564_0 /home/symbiosis-master/Tests/CTests/MPC/mymotivation/index_1795525_0
+cmd_while01:nohup /home/symbiosis-master/SymbiosisSE/build/bin/klee --bb-trace=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/example.trace.fail /home/symbiosis-master/Tests/CTests/MPC/mymotivation/prog2_inst.bc --times=0 --index=1795525_0 --last=0 --solutions=1 --trace=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/
+KLEE: output directory = " 1795525_0 0"
+KLEE: output directory is "/home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-out-1795525_0"
+KLEE: Using STP solver backend
+KLEE: WARNING: undefined reference to function: myAssert
+KLEE: WARNING: undefined reference to function: myPThreadCreate
+KLEE: WARNING: undefined reference to function: pthread_create
+KLEE: WARNING: undefined reference to function: pthread_join
+KLEE: WARNING: undefined reference to function: pthread_mutex_lock
+KLEE: WARNING: undefined reference to function: pthread_mutex_unlock
+replayOutDir:ktest file
+seeds'size is :0
+filename:index_1795525_0
+>> Read Order File: index_1795525_0
+path isklee-out-1795525_0/prefix
+create thread
+create thread
+[0] terminateStateOnExit ----- 
+[0_-1] terminateStateCLAPWithConstraints
+Thread 0 0x3d46c00 terminated. Flush Constraint Trace
+Elapsed Time: 1016s
+------------------
+[2] terminateStateOnExit ----- 
+[2_-1] terminateStateCLAPWithConstraints
+Thread 2 0x3d47b00 terminated. Flush Constraint Trace
+Elapsed Time: 1252s
+------------------
+[1] terminateStateOnExit ----- 
+[1_-1] terminateStateCLAPWithConstraints
+Thread 1 0x3d47500 terminated. Flush Constraint Trace
+Elapsed Time: 1550s
+------------------
+
+KLEE: done: total instructions = 73
+KLEE: done: completed paths = 3
+KLEE: done: generated tests = 3
+cmd_while02:nohup /home/symbiosis-master/Engine/engine --times=1 --last=1795525_0 --solutions=1 --trace=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/ prog2_inst.bc
+cmd01:time /home/symbiosis-master/SymbiosisSolver/symbiosisSolver --trace-folder=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-last --model=/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt --solution=/home/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt --with-solver=/home/z3-z3-4.8.8/build/z3 --parallel=0 --times=1795619 --last=1795525_0 --solutions=1 --trace=/home/symbiosis-master/Tests/CTests/MPC/mymotivation/  --bcfile=prog2_inst.bc
+# MODE: FIND BUG-TRIGGERING SCHEDULE
+# CONTEXT SWITCH REDUCTION: off
+# DSP:		(options = extended, short, "")
+# SYMBOLIC TRACES: /home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-last
+# SOLVER: /home/z3-z3-4.8.8/build/z3
+# CONSTRAINT MODEL: /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt
+# SOLUTION: /home/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt
+
+[Solver] Init solver... /home/z3-z3-4.8.8/build/z3 -T:30 -smt2 -in 
+[Solver] create Z3 pid 1795623
+>> Extract Path Prefix From File /home/symbiosis-master/Tests/CTests/MPC/mymotivation/klee-out-1795525_0/prefix
+
+---- ATTEMPT 0 3
+>> Parsing T0_-1
+>> Parsing T1_-1
+>> Parsing T2_-1
+MaxNum: 1
+外环
+first:1second1
+first:2second1
+外环
+first:2second1
+first:1second2
+
+-- READ SET
+[0] R-T0*main_ret*pthread_create1__64005064*0-0&prog2.c@57
+[0] R-T0*main_ret*pthread_create2__64005104*0-0&prog2.c@58
+[1] R-T0*main_shared*x_64013412*4-0&prog2.c@18
+[1] R-T0*main_shared*x_64013412*4-1&prog2.c@20
+[1] R-T0*main_shared*x_64013416*8-0&prog2.c@19
+[2] R-T0*main_shared*x_64013416*8-0&prog2.c@31
+[2] R-T0*main_shared*x_64013416*8-1&prog2.c@33
+[2] R-T0*main_shared*x_64013420*12-0&prog2.c@32
+[1] R-T1*thread_1_2_i_64005312*0-1&prog2.c@15
+[1] R-T1*thread_1_2_ret*pthread_mutex_lock1__64005432*0-0&prog2.c@16
+[1] R-T1*thread_1_2_ret*pthread_mutex_lock2__64005480*0-0&prog2.c@17
+[2] R-T2*thread_2_3_ret*pthread_mutex_lock1__64005216*0-0&prog2.c@29
+[2] R-T2*thread_2_3_ret*pthread_mutex_lock2__64005264*0-0&prog2.c@30
+
+-- WRITE SET
+[1] W-T0*main_shared*x_64013416*8-0 = $(Add w32 1          (ReadLSB w32 0 T0*main_shared*x_64013416*8-1-0))$&prog2.c@19
+[2] W-T0*main_shared*x_64013420*12-0 = $(Add w32 1          (ReadLSB w32 0 T0*main_shared*x_64013420*12-2-0))$&prog2.c@32
+
+-- LOCKPAIR SET
+[1] 0x3e4a400l-0/0&prog2.cLock@15 Unlock@23
+[2] 0x3e4a400l-0/0&prog2.cLock@29 Unlock@35
+[1] 0x3e4a420l-0/0&prog2.cLock@16 Unlock@22
+[2] 0x3e4a420l-0/0&prog2.cLock@28 Unlock@36
+
+-- WAIT SET
+
+-- SIGNAL SET
+
+-- FORK SET
+[0] fork_1-0&prog2.c@57
+[0] fork_2-0&prog2.c@58
+
+-- JOIN SET
+[0] join_1-0&prog2.c@129
+[0] join_2-0&prog2.c@130
+
+-- START SET
+[1] start&prog2.c@13
+[2] start&prog2.c@26
+
+-- EXIT SET
+0
+[0] exit&prog2.c@131
+1
+[1] exit&prog2.c@24
+2
+[2] exit&prog2.c@37
+
+-- PATH SET
+[1]: (Eq 0 (ReadLSB w32 0 T1*thread_1_2_i_64005312*0-1-1))
+[1]: (Eq (ReadLSB w32 0 T0*main_shared*x_64013412*4-1-0) (ReadLSB w32 0 T0*main_shared*x_64013412*4-1-1))
+[2]: (Eq (ReadLSB w32 0 T0*main_shared*x_64013416*8-2-0) (ReadLSB w32 0 T0*main_shared*x_64013416*8-2-1))
+
+### OPERATIONS BY THREAD
+-- Thread 0
+[0] R-T0*main_ret*pthread_create1__64005064*0-0&prog2.c@57
+[0] fork_1-0&prog2.c@57
+[0] R-T0*main_ret*pthread_create2__64005104*0-0&prog2.c@58
+[0] fork_2-0&prog2.c@58
+[0] join_1-0&prog2.c@129
+[0] join_2-0&prog2.c@130
+[0] exit&prog2.c@131
+-- Thread 1
+[1] start&prog2.c@13
+[1] R-T1*thread_1_2_i_64005312*0-1&prog2.c@15
+[1] R-T1*thread_1_2_ret*pthread_mutex_lock1__64005432*0-0&prog2.c@16
+[1] lock_0x3e4a400l-0&prog2.c@15
+[1] R-T1*thread_1_2_ret*pthread_mutex_lock2__64005480*0-0&prog2.c@17
+[1] lock_0x3e4a420l-0&prog2.c@16
+[1] R-T0*main_shared*x_64013412*4-0&prog2.c@18
+[1] R-T0*main_shared*x_64013416*8-0&prog2.c@19
+[1] W-T0*main_shared*x_64013416*8-0 = $(Add w32 1          (ReadLSB w32 0 T0*main_shared*x_64013416*8-1-0))$&prog2.c@19
+[1] R-T0*main_shared*x_64013412*4-1&prog2.c@20
+[1] unlock_0x3e4a420l-0&prog2.c@22
+[1] unlock_0x3e4a400l-0&prog2.c@23
+[1] exit&prog2.c@24
+-- Thread 2
+[2] start&prog2.c@26
+[2] R-T2*thread_2_3_ret*pthread_mutex_lock1__64005216*0-0&prog2.c@29
+[2] lock_0x3e4a420l-0&prog2.c@28
+[2] R-T2*thread_2_3_ret*pthread_mutex_lock2__64005264*0-0&prog2.c@30
+[2] lock_0x3e4a400l-0&prog2.c@29
+[2] R-T0*main_shared*x_64013416*8-0&prog2.c@31
+[2] R-T0*main_shared*x_64013420*12-0&prog2.c@32
+[2] W-T0*main_shared*x_64013420*12-0 = $(Add w32 1          (ReadLSB w32 0 T0*main_shared*x_64013420*12-2-0))$&prog2.c@32
+[2] R-T0*main_shared*x_64013416*8-1&prog2.c@33
+[2] unlock_0x3e4a400l-0&prog2.c@35
+[2] unlock_0x3e4a420l-0&prog2.c@36
+[2] exit&prog2.c@37
+size is2
+size 032
+expr is(Eq false (Eq (ReadLSB w32 0 T0*main_shared*x_64013412*4-1-0) (ReadLSB w32 0 T0*main_shared*x_64013412*4-1-1)))
+
+### GENERATING CONSTRAINT MODEL11: 0
+Opening file: /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795622_1795619_0
+[Solver] Adding memory-order constraints...
+[Solver] Adding read-write constraints...
+[Solver] Adding path constraints1111... 1795619_1
+[Solver] Adding locking-order constraints...
+[Solver] Adding fork/start constraints...
+[Solver] Adding join/exit constraints...
+num is2
+(echo "JOIN-EXIT CONSTRAINTS -----")
+
+(assert (! (> OS-join_1-0-0&prog2.c@129 OS-exit-1&prog2.c@24):named JEC0))
+
+(assert (! (> OS-join_2-0-0&prog2.c@130 OS-exit-2&prog2.c@37):named JEC1))
+
+
+[Solver] Adding wait/signal constraints...
+
+### SOLVING CONSTRAINT MODEL: Z3
+   TYPE	| #CONSTRAINTS
+--------------------------
+Memory	|	32	(0.484848%)
+ReadWrite	|	13	(0.19697%)
+Locking	|	14	(0.212121%)
+PartialOrd	|	4	(0.0606061%)
+Path		|	3	(0.0454545%)
+
+>> #CONSTRAINTS: 66
+>> #UNKNOWN VARS: 45
+
+cmd isnohup /home/z3-z3-4.8.8/build/z3 -T:30 -smt2 /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795622_1795619_0 > /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795622_1795619_0_solution
+[Solver] Model Satisfiability: unsat
+[Solver] (error "line 227 column 10: model is not available")
+file is:/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795622_1795619_0
+file:rm /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795622_1795619_0 /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795622_1795619_0_solution -rfsuccess:0
+size 032
+
+### GENERATING CONSTRAINT MODEL11: 1
+>> Extract AV From File /home/symbiosis-master/Tests/CTests/MPC/mymotivation/prog1
+[Solver] Init solver... /home/z3-z3-4.8.8/build/z3 -T:30 -smt2 -in 
+[Solver] create Z3 pid 1795635
+atoConstarint:(not (= R-T0*main_shared*x_64013412*4-1-0 R-T0*main_shared*x_64013416*8-1-0))
+Opening file: /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795622_1795619_1
+[Solver] Adding memory-order constraints...
+[Solver] Adding read-write constraints...
+[Solver] Adding path constraints1111... 1795619_1
+[Solver] Adding locking-order constraints...
+[Solver] Adding fork/start constraints...
+[Solver] Adding join/exit constraints...
+[Solver] Adding wait/signal constraints...
+[Solver] Adding AV constraints...
+
+### SOLVING CONSTRAINT MODEL: Z3
+   TYPE	| #CONSTRAINTS
+--------------------------
+Memory	|	32	(0.666667%)
+ReadWrite	|	13	(0.270833%)
+Locking	|	0	(0%)
+PartialOrd	|	0	(0%)
+Path		|	3	(0.0625%)
+
+>> #CONSTRAINTS: 48
+>> #UNKNOWN VARS: 45
+
+cmd isnohup /home/z3-z3-4.8.8/build/z3 -T:30 -smt2 /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795622_1795619_1 > /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795622_1795619_1_solution
+[Solver] Model Satisfiability: sat
+[Solver] (error "line 229 column 15: unsat core is not available")
+[Solver] Solution found in 0s:
+
+file is:/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795622_1795619_1
+file:rm /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795622_1795619_1 /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt1795622_1795619_1_solution -rfsuccess:1
+>> Killing Z3 pid 1795623 and 1795624
+0.07user 0.02system 0:00.11elapsed 82%CPU (0avgtext+0avgdata 19300maxresident)k
+0inputs+104outputs (0major+5785minor)pagefaults 0swaps
+dirFile/home/symbiosis-master/SymbiosisSolver/tmp/
+dirFile/home/symbiosis-master/SymbiosisSolver/tmp/

@@ -7,25 +7,24 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Common.h"
-
 #include "Memory.h"
 
 #include "Context.h"
-#include "klee/Expr.h"
-#include "klee/Solver.h"
-#include "klee/util/BitArray.h"
-
-#include "ObjectHolder.h"
 #include "MemoryManager.h"
 
-#include <llvm/Function.h>
-#include <llvm/Instruction.h>
-#include <llvm/Value.h>
+#include "klee/Expr/ArrayCache.h"
+#include "klee/Expr/Expr.h"
+#include "klee/Internal/Support/ErrorHandling.h"
+#include "klee/OptionCategories.h"
+#include "klee/Solver/Solver.h"
+#include "klee/util/BitArray.h"
+
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Instruction.h"
+#include "llvm/IR/Value.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include <iostream>
 #include <cassert>
 #include <sstream>
 
@@ -35,28 +34,9 @@ using namespace klee;
 namespace {
   cl::opt<bool>
   UseConstantArrays("use-constant-arrays",
-                    cl::init(true));
-}
-
-/***/
-
-ObjectHolder::ObjectHolder(const ObjectHolder &b) : os(b.os) { 
-  if (os) ++os->refCount; 
-}
-
-ObjectHolder::ObjectHolder(ObjectState *_os) : os(_os) { 
-  if (os) ++os->refCount; 
-}
-
-ObjectHolder::~ObjectHolder() { 
-  if (os && --os->refCount==0) delete os; 
-}
-  
-ObjectHolder &ObjectHolder::operator=(const ObjectHolder &b) {
-  if (b.os) ++b.os->refCount;
-  if (os && --os->refCount==0) delete os;
-  os = b.os;
-  return *this;
+                    cl::desc("Use constant arrays instead of updates when possible (default=true)\n"),
+                    cl::init(true),
+                    cl::cat(SolvingCat));
 }
 
 /***/
@@ -94,7 +74,6 @@ void MemoryObject::getAllocInfo(std::string &result) const {
 
 ObjectState::ObjectState(const MemoryObject *mo)
   : copyOnWriteOwner(0),
-    refCount(0),
     object(mo),
     concreteStore(new uint8_t[mo->size]),
     concreteMask(0),
@@ -103,19 +82,18 @@ ObjectState::ObjectState(const MemoryObject *mo)
     updates(0, 0),
     size(mo->size),
     readOnly(false) {
-  mo->refCount++;
   if (!UseConstantArrays) {
-    // FIXME: Leaked.
     static unsigned id = 0;
-    const Array *array = new Array("tmp_arr" + llvm::utostr(++id), size);
+    const Array *array =
+        getArrayCache()->CreateArray("tmp_arr" + llvm::utostr(++id), size);
     updates = UpdateList(array, 0);
   }
+  memset(concreteStore, 0, size);
 }
 
 
 ObjectState::ObjectState(const MemoryObject *mo, const Array *array)
   : copyOnWriteOwner(0),
-    refCount(0),
     object(mo),
     concreteStore(new uint8_t[mo->size]),
     concreteMask(0),
@@ -124,13 +102,12 @@ ObjectState::ObjectState(const MemoryObject *mo, const Array *array)
     updates(array, 0),
     size(mo->size),
     readOnly(false) {
-  mo->refCount++;
   makeSymbolic();
+  memset(concreteStore, 0, size);
 }
 
 ObjectState::ObjectState(const ObjectState &os) 
   : copyOnWriteOwner(0),
-    refCount(0),
     object(os.object),
     concreteStore(new uint8_t[os.size]),
     concreteMask(os.concreteMask ? new BitArray(*os.concreteMask, os.size) : 0),
@@ -140,9 +117,6 @@ ObjectState::ObjectState(const ObjectState &os)
     size(os.size),
     readOnly(false) {
   assert(!os.readOnly && "no need to copy read only object?");
-  if (object)
-    object->refCount++;
-
   if (os.knownSymbolics) {
     knownSymbolics = new ref<Expr>[size];
     for (unsigned i=0; i<size; i++)
@@ -153,20 +127,15 @@ ObjectState::ObjectState(const ObjectState &os)
 }
 
 ObjectState::~ObjectState() {
-  if (concreteMask) delete concreteMask;
-  if (flushMask) delete flushMask;
-  if (knownSymbolics) delete[] knownSymbolics;
+  delete concreteMask;
+  delete flushMask;
+  delete[] knownSymbolics;
   delete[] concreteStore;
+}
 
-  if (object)
-  {
-    assert(object->refCount > 0);
-    object->refCount--;
-    if (object->refCount == 0)
-    {
-      delete object;
-    }
-  }
+ArrayCache *ObjectState::getArrayCache() const {
+  assert(!object.isNull() && "object was NULL");
+  return object->parent->getArrayCache();
 }
 
 /***/
@@ -179,10 +148,10 @@ const UpdateList &ObjectState::getUpdates() const {
     // FIXME: We should be able to do this more efficiently, we just need to be
     // careful to get the interaction with the cache right. In particular we
     // should avoid creating UpdateNode instances we never use.
-    unsigned NumWrites = updates.head ? updates.head->getSize() : 0;
+    unsigned NumWrites = updates.head.isNull() ? 0 : updates.head->getSize();
     std::vector< std::pair< ref<Expr>, ref<Expr> > > Writes(NumWrites);
-    const UpdateNode *un = updates.head;
-    for (unsigned i = NumWrites; i != 0; un = un->next) {
+    const auto *un = updates.head.get();
+    for (unsigned i = NumWrites; i != 0; un = un->next.get()) {
       --i;
       Writes[i] = std::make_pair(un->index, un->value);
     }
@@ -208,15 +177,10 @@ const UpdateList &ObjectState::getUpdates() const {
       Contents[Index->getZExtValue()] = Value;
     }
 
-    // FIXME: We should unique these, there is no good reason to create multiple
-    // ones.
-
-    // Start a new update list.
-    // FIXME: Leaked.
     static unsigned id = 0;
-    const Array *array = new Array("const_arr" + llvm::utostr(++id), size,
-                                   &Contents[0],
-                                   &Contents[0] + Contents.size());
+    const Array *array = getArrayCache()->CreateArray(
+        "const_arr" + llvm::utostr(++id), size, &Contents[0],
+        &Contents[0] + Contents.size());
     updates = UpdateList(array, 0);
 
     // Apply the remaining (non-constant) writes.
@@ -227,17 +191,33 @@ const UpdateList &ObjectState::getUpdates() const {
   return updates;
 }
 
+void ObjectState::flushToConcreteStore(TimingSolver *solver,
+                                       const ExecutionState &state) const {
+  for (unsigned i = 0; i < size; i++) {
+    if (isByteKnownSymbolic(i)) {
+      ref<ConstantExpr> ce;
+      bool success = solver->getValue(state, read8(i), ce);
+      if (!success)
+        klee_warning("Solver timed out when getting a value for external call, "
+                     "byte %p+%u will have random value",
+                     (void *)object->address, i);
+      else
+        ce->toMemory(concreteStore + i);
+    }
+  }
+}
+
 void ObjectState::makeConcrete() {
-  if (concreteMask) delete concreteMask;
-  if (flushMask) delete flushMask;
-  if (knownSymbolics) delete[] knownSymbolics;
+  delete concreteMask;
+  delete flushMask;
+  delete[] knownSymbolics;
   concreteMask = 0;
   flushMask = 0;
   knownSymbolics = 0;
 }
 
 void ObjectState::makeSymbolic() {
-  assert(!updates.head &&
+  assert(updates.head.isNull() &&
          "XXX makeSymbolic of objects with symbolic values is unsupported");
 
   // XXX simplify this, can just delete various arrays I guess
@@ -460,7 +440,7 @@ ref<Expr> ObjectState::read(ref<Expr> offset, Expr::Width width) const {
 
   // Otherwise, follow the slow general case.
   unsigned NumBytes = width / 8;
-  assert(width == NumBytes * 8 && "Invalid write size!");
+  assert(width == NumBytes * 8 && "Invalid read size!");
   ref<Expr> Res(0);
   for (unsigned i = 0; i != NumBytes; ++i) {
     unsigned idx = Context::get().isLittleEndian() ? i : (NumBytes - i - 1);
@@ -480,7 +460,7 @@ ref<Expr> ObjectState::read(unsigned offset, Expr::Width width) const {
 
   // Otherwise, follow the slow general case.
   unsigned NumBytes = width / 8;
-  assert(width == NumBytes * 8 && "Invalid write size!");
+  assert(width == NumBytes * 8 && "Invalid width for read size!");
   ref<Expr> Res(0);
   for (unsigned i = 0; i != NumBytes; ++i) {
     unsigned idx = Context::get().isLittleEndian() ? i : (NumBytes - i - 1);
@@ -494,7 +474,6 @@ ref<Expr> ObjectState::read(unsigned offset, Expr::Width width) const {
 void ObjectState::write(ref<Expr> offset, ref<Expr> value) {
   // Truncate offset to 32-bits.
   offset = ZExtExpr::create(offset, Expr::Int32);
-  assert(isa<ConstantExpr>(value));
 
   // Check for writes at constant offsets.
   if (ConstantExpr *CE = dyn_cast<ConstantExpr>(offset)) {
@@ -523,7 +502,7 @@ void ObjectState::write(unsigned offset, ref<Expr> value) {
   // Check for writes of constant values.
   if (ConstantExpr *CE = dyn_cast<ConstantExpr>(value)) {
     Expr::Width w = CE->getWidth();
-    if (w <= 64) {
+    if (w <= 64 && klee::bits64::isPowerOfTwo(w)) {
       uint64_t val = CE->getZExtValue();
       switch (w) {
       default: assert(0 && "Invalid write size!");
@@ -576,24 +555,24 @@ void ObjectState::write64(unsigned offset, uint64_t value) {
   }
 }
 
-void ObjectState::print() {
-  std::cerr << "-- ObjectState --\n";
-  std::cerr << "\tMemoryObject ID: " << object->id << "\n";
-  std::cerr << "\tRoot Object: " << updates.root << "\n";
-  std::cerr << "\tSize: " << size << "\n";
+void ObjectState::print() const {
+  llvm::errs() << "-- ObjectState --\n";
+  llvm::errs() << "\tMemoryObject ID: " << object->id << "\n";
+  llvm::errs() << "\tRoot Object: " << updates.root << "\n";
+  llvm::errs() << "\tSize: " << size << "\n";
 
-  std::cerr << "\tBytes:\n";
+  llvm::errs() << "\tBytes:\n";
   for (unsigned i=0; i<size; i++) {
-    std::cerr << "\t\t["<<i<<"]"
+    llvm::errs() << "\t\t["<<i<<"]"
                << " concrete? " << isByteConcrete(i)
                << " known-sym? " << isByteKnownSymbolic(i)
                << " flushed? " << isByteFlushed(i) << " = ";
     ref<Expr> e = read8(i);
-    std::cerr << e << "\n";
+    llvm::errs() << e << "\n";
   }
 
-  std::cerr << "\tUpdates:\n";
-  for (const UpdateNode *un=updates.head; un; un=un->next) {
-    std::cerr << "\t\t[" << un->index << "] = " << un->value << "\n";
+  llvm::errs() << "\tUpdates:\n";
+  for (const auto *un = updates.head.get(); un; un = un->next.get()) {
+    llvm::errs() << "\t\t[" << un->index << "] = " << un->value << "\n";
   }
 }

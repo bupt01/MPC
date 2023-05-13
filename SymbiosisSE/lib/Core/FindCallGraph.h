@@ -20,7 +20,7 @@ public:
     static char ID;
     std::map< llvm::Function *, std::set<llvm::Function *> > callersOf;
     FindCallGraph();
-    virtual const char *getPassName() const;
+    virtual llvm::StringRef getPassName() const;
     
     virtual bool doInitialization (llvm::Module &M);
     virtual bool runOnModule (llvm::Module &M);

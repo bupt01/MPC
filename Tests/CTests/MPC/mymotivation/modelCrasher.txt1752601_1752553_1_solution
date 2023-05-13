@@ -1,0 +1,86 @@
+MEMORY-ORDER CONSTRAINTS -----
+READ-WRITE CONSTRAINTS WITH SIMPLIFY -----
+PATH CONSTRAINTS -----
+LOCKING CONSTRAINTS -----
+FORK-START CONSTRAINTS -----
+JOIN-EXIT CONSTRAINTS -----
+WAIT-SIGNAL CONSTRAINTS -----
+sat
+(model 
+  (define-fun InitR-T2*thread_2_3_ret*pthread_mutex_lock1__46482576*0 () Int
+    47)
+  (define-fun R-T0*main_ret*pthread_create2__46482440*0-0-0 () Int
+    44)
+  (define-fun OR-T2*thread_2_3_ret*pthread_mutex_lock1__46482576*0-2-0&prog2.c@29 () Int
+    9)
+  (define-fun OR-T0*main_ret*pthread_create1__46482360*0-0-0&prog2.c@57 () Int
+    0)
+  (define-fun OS-exit-0&prog2.c@131 () Int
+    21)
+  (define-fun R-T0*main_shared*x_46490728*8-2-1 () Int
+    45)
+  (define-fun OS-lock_0x2d94420l-2-0&prog2.c@28 () Int
+    10)
+  (define-fun OS-start-2&prog2.c@26 () Int
+    8)
+  (define-fun OW-T0*main_shared*x_46490732*12-2-0&prog2.c@32 () Int
+    15)
+  (define-fun OS-join_2-0-0&prog2.c@130 () Int
+    20)
+  (define-fun R-T2*thread_2_3_ret*pthread_mutex_lock2__46482608*0-2-0 () Int
+    48)
+  (define-fun R-T0*main_shared*x_46490732*12-2-0 () Int
+    46)
+  (define-fun R-T1*thread_1_2_i_46482416*0-1-1 () Int
+    0)
+  (define-fun OS-lock_0x2d94400l-2-0&prog2.c@29 () Int
+    12)
+  (define-fun R-T0*main_ret*pthread_create1__46482360*0-0-0 () Int
+    43)
+  (define-fun OR-T0*main_shared*x_46490728*8-2-0&prog2.c@31 () Int
+    13)
+  (define-fun OR-T0*main_ret*pthread_create2__46482440*0-0-0&prog2.c@58 () Int
+    2)
+  (define-fun R-T0*main_shared*x_46490728*8-2-0 () Int
+    45)
+  (define-fun OS-exit-2&prog2.c@37 () Int
+    19)
+  (define-fun InitR-T2*thread_2_3_ret*pthread_mutex_lock2__46482608*0 () Int
+    48)
+  (define-fun OS-join_1-0-0&prog2.c@129 () Int
+    7)
+  (define-fun OS-exit-1&prog2.c@16 () Int
+    6)
+  (define-fun OS-fork_1-0-0&prog2.c@57 () Int
+    1)
+  (define-fun OS-fork_2-0-0&prog2.c@58 () Int
+    3)
+  (define-fun InitR-T0*main_ret*pthread_create1__46482360*0 () Int
+    43)
+  (define-fun InitR-T0*main_shared*x_46490728*8 () Int
+    45)
+  (define-fun InitR-T0*main_shared*x_46490732*12 () Int
+    46)
+  (define-fun OS-start-1&prog2.c@13 () Int
+    4)
+  (define-fun InitR-T0*main_ret*pthread_create2__46482440*0 () Int
+    44)
+  (define-fun InitR-T1*thread_1_2_i_46482416*0 () Int
+    0)
+  (define-fun OR-T2*thread_2_3_ret*pthread_mutex_lock2__46482608*0-2-0&prog2.c@30 () Int
+    11)
+  (define-fun OS-unlock_0x2d94400l-2-0&prog2.c@35 () Int
+    17)
+  (define-fun OR-T1*thread_1_2_i_46482416*0-1-1&prog2.c@15 () Int
+    5)
+  (define-fun OS-unlock_0x2d94420l-2-0&prog2.c@36 () Int
+    18)
+  (define-fun R-T2*thread_2_3_ret*pthread_mutex_lock1__46482576*0-2-0 () Int
+    47)
+  (define-fun OR-T0*main_shared*x_46490732*12-2-0&prog2.c@32 () Int
+    14)
+  (define-fun OR-T0*main_shared*x_46490728*8-2-1&prog2.c@33 () Int
+    16)
+)
+(error "line 157 column 15: unsat core is not available")
+end

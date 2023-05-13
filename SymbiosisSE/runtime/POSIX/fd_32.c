@@ -6,7 +6,18 @@
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
+// Contains 32bit definitions of posix file functions
+//===---
 
+#if __GNUC__
+#if __x86_64__ || __ppc64__
+#define ENV64
+#else
+#define ENV32
+#endif
+#endif
+
+#include "klee/Config/Version.h"
 #define _LARGEFILE64_SOURCE
 #include "fd.h"
 
@@ -18,7 +29,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#ifndef __FreeBSD__
 #include <sys/vfs.h>
+#endif
 #include <fcntl.h>
 #include <stdarg.h>
 #include <assert.h>
@@ -41,6 +54,12 @@ static void __stat64_to_stat(struct stat64 *a, struct stat *b) {
   b->st_ctime = a->st_ctime;
   b->st_blksize = a->st_blksize;
   b->st_blocks = a->st_blocks;
+#ifdef _BSD_SOURCE
+  b->st_atim.tv_nsec = a->st_atim.tv_nsec;
+  b->st_mtim.tv_nsec = a->st_mtim.tv_nsec;
+  b->st_ctim.tv_nsec = a->st_ctim.tv_nsec;
+#endif
+
 }
 
 /***/
@@ -52,11 +71,25 @@ int open(const char *pathname, int flags, ...) {
     /* get mode */
     va_list ap;
     va_start(ap, flags);
-    mode = va_arg(ap, mode_t);
+    mode = va_arg(ap, int);
     va_end(ap);
   }
 
   return __fd_open(pathname, flags, mode);
+}
+
+int openat(int fd, const char *pathname, int flags, ...) {
+  mode_t mode = 0;
+
+  if (flags & O_CREAT) {
+    /* get mode */
+    va_list ap;
+    va_start(ap, flags);
+    mode = va_arg(ap, int);
+    va_end(ap);
+  }
+
+  return __fd_openat(fd, pathname, flags, mode);
 }
 
 off_t lseek(int fd, off_t off, int whence) {
@@ -134,7 +167,15 @@ int statfs(const char *path, struct statfs *buf32) {
 
 /* Based on uclibc version. We use getdents64 and then rewrite the
    results over themselves, as dirent32s. */
+#ifndef __FreeBSD__
 ssize_t getdents(int fd, struct dirent *dirp, size_t nbytes) {
+#else
+#if __FreeBSD__ > 11
+ssize_t getdents(int fd, char *dirp, size_t nbytes) {
+#else
+int getdents(int fd, char *dirp, int nbytes) {
+#endif
+#endif
   struct dirent64 *dp64 = (struct dirent64*) dirp;
   ssize_t res = __fd_getdents(fd, dp64, nbytes);
 
@@ -142,10 +183,12 @@ ssize_t getdents(int fd, struct dirent *dirp, size_t nbytes) {
     struct dirent64 *end = (struct dirent64*) ((char*) dp64 + res);
     while (dp64 < end) {
       struct dirent *dp = (struct dirent *) dp64;
-      size_t name_len = (dp64->d_reclen - 
+      size_t name_len = (dp64->d_reclen -
                            (size_t) &((struct dirent64*) 0)->d_name);
       dp->d_ino = dp64->d_ino;
+#ifdef _DIRENT_HAVE_D_OFF
       dp->d_off = dp64->d_off;
+#endif
       dp->d_reclen = dp64->d_reclen;
       dp->d_type = dp64->d_type;
       memmove(dp->d_name, dp64->d_name, name_len);
@@ -160,37 +203,16 @@ int __getdents(unsigned int fd, struct dirent *dirp, unsigned int count)
 
 /* Forward to 64 versions (uclibc expects versions w/o asm specifier) */
 
-int open64(const char *pathname, int flags, ...) __attribute__((weak));
-int open64(const char *pathname, int flags, ...) {
+__attribute__((weak)) int open64(const char *pathname, int flags, ...) {
   mode_t mode = 0;
 
   if (flags & O_CREAT) {
     /* get mode */
     va_list ap;
     va_start(ap, flags);
-    mode = va_arg(ap, mode_t);
+    mode = va_arg(ap, int);
     va_end(ap);
   }
 
   return __fd_open(pathname, flags, mode);
-}
-
-off64_t lseek64(int fd, off64_t off, int whence) __attribute__((weak));
-off64_t lseek64(int fd, off64_t off, int whence) {
-  return __fd_lseek(fd, off, whence);
-}
-
-int stat64(const char *path, struct stat64 *buf) __attribute__((weak));
-int stat64(const char *path, struct stat64 *buf) {
-  return __fd_stat(path, buf);
-}
-
-int lstat64(const char *path, struct stat64 *buf) __attribute__((weak));
-int lstat64(const char *path, struct stat64 *buf) {
-  return __fd_lstat(path, buf);
-}
-
-int fstat64(int fd, struct stat64 *buf) __attribute__((weak));
-int fstat64(int fd, struct stat64 *buf) {
-  return __fd_fstat(fd, buf);
 }
