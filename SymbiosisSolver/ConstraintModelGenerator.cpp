@@ -839,6 +839,164 @@ void ConstModelGen::addLockingConstraintsWithSimplify(map<string, vector<LockPai
     }
 }
 
+string ConstModelGen::addLockingConstraints_lz(map<string, vector<LockPairOperation> > lockpairset,set<string> markedSynOp){
+    string retStr = ""; 
+    retStr += z3solver.writeLineZ3_yqp("(echo \"LOCKING CONSTRAINTS -----\")\n");
+    int labelCounter = 0;
+    for(map<string, vector<LockPairOperation> >::iterator it = lockpairset.begin(); it != lockpairset.end(); ++it)
+    {
+        vector<LockPairOperation> lockvec = it->second;
+        size_t lockSize = lockvec.size();
+        
+        if(lockSize > 1)
+        {
+            numLO++; //account for constraint Oau < Oal'
+            for(int i=0; i < lockSize; i++)
+            {
+                
+                vector<LockPairOperation> lockpairPrime = lockvec;
+                LockPairOperation main = lockpairPrime[i];//当前锁对
+
+                lockpairPrime.erase(lockpairPrime.begin()+i);
+                
+                //OPTIMIZATION - remove unnecessary lock pairs (i.e. those belonging to the same thread
+                //  that either happen before the closest pair to this one, or after this pair)
+                // 1 - find the closest lock pair to the main, from the same thread
+                // 2 - remove all other locking pairs from the same thread
+                //cout << "MAIN: "; main.print();
+                if(i == 0){
+                    //erase all subsequent locking pairs from the same thread
+                    for(vector<LockPairOperation>::iterator remIt = lockpairPrime.begin(); remIt!=lockpairPrime.end();)
+                    {
+                        if(remIt->getThreadId() == main.getThreadId()){
+                            //cout << "\terase "; remIt->print();
+                            lockpairPrime.erase(remIt);
+                        }
+                        else{
+                            //cout << "\tbreak\n";
+                            break;
+                        }
+                    }
+                }
+                else{
+                    LockPairOperation closestPair = lockpairPrime[i-1];
+                    
+                    bool flag = false; //flag indicating that we reached the subset of locking pairs of the same thread (this avoids iterating over unncessary cases)
+                    for(vector<LockPairOperation>::iterator remIt = lockpairPrime.begin(); remIt!=lockpairPrime.end();)
+                    {
+                        if(remIt->getThreadId() == main.getThreadId())
+                        {
+                            flag = true;
+                            if(remIt->getLockOrderConstraintName() != closestPair.getLockOrderConstraintName()
+                               || remIt->getUnlockOrderConstraintName() != closestPair.getUnlockOrderConstraintName())
+                            {
+                                //this already accounts for the cases where closestPair is from another thread
+                                lockpairPrime.erase(remIt);
+                            }
+                            else{
+                                ++remIt;
+                            }
+                        }
+                        else if(flag){
+                            break;
+                        }
+                        else{
+                            ++remIt;
+                        }
+                    }
+                }
+                // ----- end of optimization
+                
+                //if there are no remaning locks to generate constraints continue to next locking pair
+                if(lockpairPrime.size() == 0){
+                    continue;
+                }
+                
+                numLO = numLO + 1 + 2*lockpairPrime.size(); //account for constraints Oal > Oau' && Oal'' > Oau || Oau'' < Oal'
+                string globalOr = "";
+                string firstAnd = "";
+                
+                for(int j = 0; j < lockpairPrime.size(); j++)
+                {
+               
+                    vector<LockPairOperation> lockpairDoublePrime = lockpairPrime;
+                    LockPairOperation mainPrime = lockpairDoublePrime[j];
+                                         
+                    //if(main.getThreadId() == mainPrime.getThreadId())
+                    //  continue;
+                    
+                    lockpairDoublePrime.erase(lockpairDoublePrime.begin()+j);
+                    string secondAnd = "";
+                    
+                     //lz
+                    // if(mainPrime.getUnlockLine() != -1){
+                    //     //const: Oal > Oau'
+                    //     secondAnd.insert(0, z3solver.cGt(main.getLockOrderConstraintName(),mainPrime.getUnlockOrderConstraintName()));
+                    // }
+                     if(mainPrime.getUnlockLine() != -1&&markedSynOp.count(mainPrime.getUnlockConstraintName())){
+                         //const: Oal > Oau'
+                         secondAnd.insert(0, z3solver.cGt(main.getLockOrderConstraintName(),mainPrime.getUnlockOrderConstraintName()));
+                     }
+                    
+                    for(int u = 0; u < lockpairDoublePrime.size(); u++)
+                    {
+                        LockPairOperation doublePrime = lockpairDoublePrime[u];
+                        if(markedSynOp.count(doublePrime.getUnlockConstraintName())&&markedSynOp.count(main.getUnlockConstraintName())){
+                             secondAnd.append(z3solver.cOr(z3solver.cGt(doublePrime.getLockOrderConstraintName(),main.getUnlockOrderConstraintName()),
+                                                          z3solver.cLt(doublePrime.getUnlockOrderConstraintName(),mainPrime.getLockOrderConstraintName())));
+                        }else if(markedSynOp.count(main.getUnlockConstraintName())){
+                            secondAnd.append(z3solver.cGt(doublePrime.getLockOrderConstraintName(),main.getUnlockOrderConstraintName()));
+
+                        }else if(markedSynOp.count(doublePrime.getUnlockConstraintName())){
+                            secondAnd.append(z3solver.cLt(doublePrime.getUnlockOrderConstraintName(),mainPrime.getLockOrderConstraintName()));
+                        }
+
+                        
+                        // if(main.getUnlockLine() != -1 && doublePrime.getUnlockLine() != -1){
+                        //     //const: Oal'' > Oau || Oau'' < Oal'
+                        //     secondAnd.append(z3solver.cOr(z3solver.cGt(doublePrime.getLockOrderConstraintName(),main.getUnlockOrderConstraintName()),
+                        //                                   z3solver.cLt(doublePrime.getUnlockOrderConstraintName(),mainPrime.getLockOrderConstraintName())));
+                        // }
+                        // else if(main.getUnlockLine() != -1){ //discard the constraint Oau'' < Oal'
+                        //     //const: Oal'' > Oau
+                        //     secondAnd.append(z3solver.cGt(doublePrime.getLockOrderConstraintName(),main.getUnlockOrderConstraintName()));
+                        // }
+                        // else if(doublePrime.getUnlockLine() != -1){  //discard the constraint Oal'' > Oau
+                        //     //const: Oau'' < Oal'
+                        //     secondAnd.append(z3solver.cLt(doublePrime.getUnlockOrderConstraintName(),mainPrime.getLockOrderConstraintName()));
+                        // }
+                    }
+                    
+                    if(main.getUnlockLine() != -1&&markedSynOp.count(main.getUnlockConstraintName())){
+                        //const: Oau < Oal'
+                        firstAnd.append(z3solver.cLt(main.getUnlockOrderConstraintName(), mainPrime.getLockOrderConstraintName()));
+                    }
+                    if(secondAnd!=""){
+                    globalOr.append("\n"+z3solver.cAnd(secondAnd));
+                    }
+
+                }
+                if(firstAnd!=""){
+                    globalOr.insert(0, z3solver.cAnd(firstAnd));
+                }
+                if(globalOr!=""){
+                    string label = "LC"+util::stringValueOf(labelCounter); //** label to uniquely identify this constraint
+                    labelCounter++;
+                    retStr += z3solver.writeLineZ3_yqp(z3solver.postNamedAssert(z3solver.cOr(globalOr),label));
+
+                }
+                //if(!firstAnd.empty()) //remove case where there are no unlock operations
+               
+            }
+        }
+    }
+	return retStr;
+}
+
+
+
+
+
 string ConstModelGen::addLockingConstraints_yqp2(map<string, vector<LockPairOperation> > lockpairset){
     string retStr = ""; 
     retStr += z3solver.writeLineZ3_yqp("(echo \"LOCKING CONSTRAINTS -----\")\n");
@@ -1167,7 +1325,6 @@ string ConstModelGen::addJoinExitConstraints_yqp(std::map<string, vector<SyncOpe
     {
         string constraint;
         vector<SyncOperation> tmpvec = it->second;
-        std::cout<<"num is"<<tmpvec.size()<<std::endl;
         for(vector<SyncOperation>::iterator in = tmpvec.begin(); in!=tmpvec.end(); ++in)
         {
             SyncOperation parent = *in;
@@ -1220,6 +1377,86 @@ void ConstModelGen::addJoinExitConstraints(std::map<string, vector<SyncOperation
         }
     }
 }
+
+string ConstModelGen::addWaitSignalConstraints_lz(map<string, vector<SyncOperation> > waitset, map<string, vector<SyncOperation> > signalset,set<string> markedSynOp)
+{
+	string retStr = "";
+    retStr += z3solver.writeLineZ3_yqp("(echo \"WAIT-SIGNAL CONSTRAINTS -----\")\n");
+    
+    int totalVars = 0;
+    int labelCounter = 0;
+    map<string,vector<string> > signalBinaryVars;   //map signal id -> vector of all binary vars corresponding to this signal operation
+    //map<string,string > waitConditions;             //map wait id (W-obj-tid) -> string corresponding to the constraints for all wait operations on the same object
+    
+    for(map<string, vector<SyncOperation> >::iterator allWaitIt = waitset.begin(); allWaitIt != waitset.end(); ++allWaitIt)
+    {
+        vector<SyncOperation> signals = signalset[allWaitIt->first];
+        totalVars += signals.size();
+    
+        
+        for(vector<SyncOperation>::iterator waitIt = allWaitIt->second.begin(); waitIt != allWaitIt->second.end(); ++waitIt)
+        {
+            SyncOperation wait = *waitIt;
+            string globalOr;
+            if(!markedSynOp.count(wait.getConstraintName())){
+                continue;
+            }
+            for(vector<SyncOperation>::iterator signalIt = signals.begin(); signalIt!= signals.end(); ++signalIt)
+            {
+                SyncOperation signal = *signalIt;
+                if(!markedSynOp.count(signal.getConstraintName())){
+                    continue;
+                }
+                
+                string labelSig = "@S";
+                
+                //account for signalall
+                if(signal.getType().find("signalall")!=string::npos)
+                {
+                    labelSig = "@SALL";
+                }
+                
+                //binVar -> binary var used to indicate whether the signal operation is mapped to a wait operation or not
+                string binVar = "b" + wait.getVariableName() + "@W" + util::stringValueOf(wait.getLine()) + "-" + wait.getThreadId() + "-" + util::stringValueOf(wait.getVariableId()) + labelSig + util::stringValueOf(signal.getLine()) + "-" + signal.getThreadId() + "-" + util::stringValueOf(signal.getVariableId());
+                
+                string signalId = signal.getConstraintName();
+                signalBinaryVars[signalId].push_back(binVar);
+                
+                //const: Oa_sg < Oa_wt && b^{a_sg}_{a_wt} = 1
+                globalOr.append(z3solver.cAnd(z3solver.cLt(signal.getOrderConstraintName(), wait.getOrderConstraintName()), z3solver.cEq(binVar,util::stringValueOf(1))));
+                globalOr.append(z3solver.cAnd(z3solver.cGt(signal.getOrderConstraintName(), wait.getOrderConstraintName()), z3solver.cEq(binVar,util::stringValueOf(0)))); // added by yqp
+                numPO += 2;
+				
+                retStr += z3solver.writeLineZ3_yqp(z3solver.declareIntVarAndStore(binVar, 0, 1));
+            }
+            string label = "WSC"+util::stringValueOf(labelCounter); //** label to uniquely identify this constraint
+            labelCounter++;
+            retStr+= z3solver.writeLineZ3_yqp(z3solver.postNamedAssert(z3solver.cOr(globalOr),label));
+        }
+    }
+    
+    //add constraints stating that a given signal can only be mapped to a wait operation
+    for(map<string, vector<string> >::iterator binSetIt = signalBinaryVars.begin(); binSetIt != signalBinaryVars.end(); ++binSetIt)
+    {
+        string signalId = binSetIt->first;
+        
+        //** if is signalAll, we don't constrain the number of waits that can be matched with this signal
+        if(signalId.find("signalall")!=string::npos)
+        {
+            //const: Sum_{x \in WT} b^{a_sg}_{x} >= 0
+            retStr += z3solver.writeLineZ3_yqp(z3solver.postAssert(z3solver.cGeq(z3solver.cSummation(binSetIt->second), util::stringValueOf(0))));
+        }
+        else{
+            //const: Sum_{x \in WT} b^{a_sg}_{x} <= 1
+            retStr += z3solver.writeLineZ3_yqp(z3solver.postAssert(z3solver.cLeq(z3solver.cSummation(binSetIt->second), util::stringValueOf(1))));
+        }
+        numPO++; //account for the constraint above in the partial-order constraints
+    }
+
+	return retStr;
+}
+
+
 
 string ConstModelGen::addWaitSignalConstraints_yqp(map<string, vector<SyncOperation> > waitset, map<string, vector<SyncOperation> > signalset)
 {

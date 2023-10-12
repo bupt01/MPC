@@ -474,20 +474,16 @@ bool Z3Solver::solve_yqp()
 	system(cmd.c_str());
 	startTime = time(NULL);
     bool success = checkSat_yqp();
-	
-	std::cout<<"file is:"<<formulaFile<<std::endl;
-	cmd = "mv " + formulaFile + "_solution /home/symbiosis-master/Tests/CTests/MPC/mymotivation/";
-	system(cmd.c_str());
-	cmd = "mv " + formulaFile + " /home/symbiosis-master/Tests/CTests/MPC/mymotivation/";
-	system(cmd.c_str());
+	//if(!success){
+      //cmd = "rm " + formulaFile + " " + formulaFile + "_solution -rf";
+      //system(cmd.c_str());
+	//}
+	//std::cout<<"solution:"<<formulaFile<<std::endl;
 
-    cmd = "rm " + formulaFile + " " + formulaFile + "_solution -rf";
-	std::cout<<"file:"<<cmd<<"success:"<<success<<std::endl;
-    system(cmd.c_str());
 	long long end = getSystemTime();
 	gettimeofday(&endday, NULL);
 	int timeuse = 1000000 * ( endday.tv_sec - startday.tv_sec ) + 
-		endday.tv_usec - startday.tv_usec; 
+		endday.tv_usec - startday.tv_usec;
 	//printf("Solver Time3: %d us\n", timeuse);
     return success;
 }

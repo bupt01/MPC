@@ -304,6 +304,17 @@ string LockPairOperation::getLockOrderConstraintName()
     ret = "OS-lock_" + var + "-" + threadId + "-" + util::stringValueOf(id) + "&"+ filename + "@" + util::stringValueOf(line);
     return ret;
 }
+string LockPairOperation::getLockConstraintName()
+{
+     string ret;
+    if(var.empty()){
+        ret = "S-lock-" + threadId + "&" +filename + "@" + util::stringValueOf(line);
+    }
+    else{
+        ret = "S-lock_" + var + "-" + threadId + "-" + util::stringValueOf(id) + "&" +filename + "@" + util::stringValueOf(line);
+    }
+    return ret;
+}
 
 string LockPairOperation::getUnlockOrderConstraintName()
 {
@@ -313,6 +324,17 @@ string LockPairOperation::getUnlockOrderConstraintName()
     else
         ret = "OS-unlock_"     + var + "-" + threadId + "-" + util::stringValueOf(unlockVarId) + "&" + filename + "@" + util::stringValueOf(unlockLine);
     
+    return ret;
+}
+string LockPairOperation::getUnlockConstraintName()
+{
+        string ret;
+    if(var.empty()){
+        ret = "S-unlock-" + threadId + "&" +filename + "@" + util::stringValueOf(unlockLine);
+    }
+    else{
+        ret = "S-unlock_" + var + "-" + threadId + "-" + util::stringValueOf(id) + "&" +filename + "@" + util::stringValueOf(unlockLine);
+    }
     return ret;
 }
 

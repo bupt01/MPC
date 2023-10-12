@@ -52,6 +52,11 @@ bool checkAV(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 map<string, vector<RWOperation> > readset;              //map var id -> vector with variable's read operations
 map<string, vector<RWOperation> > writeset, writeset2;             //map var id -> vector with variable's write operations
 map<string, vector<LockPairOperation> > lockpairset;    //map object id -> vector with object's lock pair operations
+set<string> markedSynOp;//lz    //map object id -> vector with object's lock pair operations
+vector<vector<string>> equivalentThread;//lz
+vector<vector<string>> currentEquivalentThread;//lz
+int redundances=0;
+set<vector<pair<string, int> > > redundantPath;	//store all possible paths based on the just observed path (yqp)
 map<string, SyncOperation> startset;                    //map thread id -> thread's start operation
 map<string, SyncOperation> exitset;                     //map thread id -> thread's exit operation
 map<string, vector<SyncOperation> > forkset;            //map thread id -> vector with thread's fork operations
@@ -61,6 +66,8 @@ map<string, vector<SyncOperation> > signalset;          //map object id -> vecto
 vector<SyncOperation> syncset;
 vector<std::pair<PathOperation, string> > pathset;
 map<string, vector<int> > threadIDToPathCond;			//map thrad id -> vector with path cond id in pathset (yqp)
+map<string,string> threadIdToPath;//map thread id ->path condition
+map<string, vector<int> > markedThreadIDToPathCond;			//map thrad id -> vector with path cond id in pathset (lz)
 vector<vector<pair<string, int> > > indexes;	//store all possible paths based on the just observed path (yqp)
 map<string, string> lastPathConds, lastPathConds0;		//map thread id to its last path condition for truncate OP order list (yqp)
 map<string, int> lastIndex, lastIndex0;		//map thread id to its last path condition for truncate OP order list (yqp)
@@ -77,15 +84,15 @@ map<string, vector<string> > symTracesByThread;         //map thread id -> vecto
 vector<string> solution;                                //vector that stores a given schedule (i.e. solution) found by the solver (used in --fix-mode)
 std::set<std::vector<std::string> > globalOrders;
 std::vector<PathOperation> globalOrderConstraints;
-
+std::set<std::string> slicedPathCondLines;//lz
 // temp sets
 std::map<std::string, std::vector<Operation*> > old_operationsByThread;
 set<string> bitVars;
-
+int savedPath=0;
 int numConstraints, numVariables;
 set<string> limitStr;
 vector<PathOperation> limitConstraints;
-
+int curentPathTime=0;
 //RWOperation *p;
 int pathSizeLimit = 100000;  // the limit of symbolic path len of each thread 
 
@@ -153,6 +160,338 @@ int findNumSubstr(std::string str, std::string subs) {
 bool justCheck = false;
 std::set<string> checkID, revertedID;
 int minimalIndex = 0;
+int findFirstDifference(const std::string& str1, const std::string& str2) {
+    int length = std::min(str1.length(), str2.length());  // 获取较短字符串的长度
+
+    for (int i = 0; i < length; ++i) {
+        if (str1[i] != str2[i]) {
+            return i;  // 返回第一个不相同字符的索引位置
+        }
+    }
+
+    if (str1.length() != str2.length()) {
+        return length;  // 返回较短字符串的长度，因为较短字符串的所有字符都相同
+    }
+
+    return -1;  // 字符串完全相同
+}
+
+bool compareStrings(const std::string& str1, const std::string& str2) {
+	int pos=findFirstDifference(str1,str2);
+	if((prefix.count(str1)&&pos<=prefix[str1])||(prefix.count(str2)&&pos<=prefix[str2])){
+		return false;
+	}
+	return true;
+}
+void permuteHelper(std::vector<std::string>& strs, int start, std::vector<std::vector<std::string>>& permutations) {
+    if (start == strs.size() - 1) {
+        permutations.push_back(strs);
+        return;
+    }
+
+    for (int i = start; i < strs.size(); ++i) {
+        std::swap(strs[start], strs[i]);
+        permuteHelper(strs, start + 1, permutations);
+        std::swap(strs[start], strs[i]);
+    }
+}
+
+std::vector<std::vector<std::string>> permute(std::vector<std::string>& strs) {
+    std::vector<std::vector<std::string>> permutations;
+    permuteHelper(strs, 0, permutations);
+    return permutations;
+}
+// 自定义比较函数
+bool customComparator(pair<string,int> a, pair<string,int> b) {
+    // 按照元素的绝对值进行降序排序
+    return a.first<b.first;
+}
+void calculateRedundance(std::vector<std::pair<string, int>> &index){
+	//std::cout<<"index:"<<index.size()<<std::endl;
+	if(currentEquivalentThread.size()==0){
+		return;
+	}
+
+	for(auto threads:currentEquivalentThread){
+		set<string> recordThreads;
+		vector<string> exploringConditions;
+		for(int i=0;i<threads.size();i++){ //计算探索到的一条路径前缀的路径条件
+			recordThreads.insert(threads[i]);
+			int reservedPath=0;
+			for (size_t j = 0; j < index.size(); j++)
+			{
+				/* code */
+				if(index[j].first==threads[i]){
+					reservedPath=index[j].second;
+					break;
+				}
+			}
+			string currentPathCondition=threadIdToPath[threads[i]];
+			string exploringPath=currentPathCondition.substr(0,reservedPath);
+			if(reservedPath!=currentPathCondition.size()){
+				exploringPath.append(1,currentPathCondition[reservedPath]=='0'?'1':'0');
+			}
+			exploringConditions.push_back(exploringPath);
+		}
+		// for(auto ec:exploringConditions){
+		// 	std::cout<<ec<<std::endl;
+		// }
+		std::vector<std::vector<std::string>> equalivlentPathsPrefixes=permute(exploringConditions);		
+		for (auto eq: equalivlentPathsPrefixes)
+		{
+			// std::cout<<"这是一组："<<eq.size()<<std::endl;
+			// for(auto q:eq){
+			// 	std::cout<<q<<std::endl;
+			// }
+			std::vector<std::pair<string, int>> tmpIndex;
+			bool flag=false;
+			for (size_t z = 0; z < eq.size(); z++)
+			{
+				int unsame=findFirstDifference(eq[z],threadIdToPath[threads[z]]);
+				if(unsame==eq[z].size()||unsame==threadIdToPath[threads[z]].size()){
+					flag=true;
+					break;
+				}
+				if(unsame==-1){
+					tmpIndex.push_back(pair<string,int>(threads[z],threadIdToPath[threads[z]].size()-prefix[threads[z]]));
+
+				}else{
+					int preservedNum=unsame-prefix[threads[z]];
+					tmpIndex.push_back(pair<string,int>(threads[z],preservedNum));
+				}
+				
+			}
+			if(flag){
+				continue;
+			}
+			for (auto id:index)
+			{
+				if(!recordThreads.count(id.first)){
+					tmpIndex.push_back(pair<string,int>(id.first,id.second));
+				}
+				/* code */
+			}
+			std::sort(tmpIndex.begin(),tmpIndex.end(),customComparator);
+			redundantPath.insert(tmpIndex);
+			
+		}
+		
+	}
+
+
+
+}
+string getPathCondition(string threadName){
+	int startPos =pathString.find(threadName+"_");
+	if(startPos ==std::string::npos){
+		return "";
+	}
+	startPos=startPos+threadName.length()+1;
+	return pathString.substr(startPos,threadIDToPathCond.count(threadName)?threadIDToPathCond[threadName].size():0);
+}
+// lz: generate all possible paths and elimite redundance
+void traverseAllPathReduceRedundance(ConstModelGen *cmgen) {
+	for (map<string, vector<int> >::reverse_iterator it = threadIDToPathCond.rbegin();
+				it != threadIDToPathCond.rend(); ++it) {
+		threadIdToPath.insert(pair<string,string>(it->first,getPathCondition(it->first)));//计算已经探索的路径每条路径选取的分支
+	}
+	vector<string> vec={"1","2","3","4"};
+	equivalentThread.push_back(vec);
+	for(auto threads:equivalentThread){//计算当前条件下有可能有冗余的等价线程
+		set<string> visistedThread;
+		for (size_t i = 0; i < threads.size(); i++)
+		{
+			vector<string> threadGroup;
+
+			if(visistedThread.count(threads[i])){
+				continue;
+			}
+			visistedThread.insert(threads[i]);
+		    threadGroup.push_back(threads[i]);
+			for(size_t j=i+1;j<threads.size();j++){
+				if(visistedThread.count(threads[j])){
+					continue;
+				}			
+				if(threadIdToPath.count(threads[i])&&threadIdToPath.count(threads[j])&&
+				compareStrings(threadIdToPath[threads[i]],threadIdToPath[threads[j]])){
+					threadGroup.push_back(threads[j]);
+					visistedThread.insert(threads[j]);
+				}
+			}
+			if(threadGroup.size()<2){
+				continue;
+			}
+			currentEquivalentThread.push_back(threadGroup);
+			/* code */
+		}
+	}
+	// for(auto cet:currentEquivalentThread){
+	// 	std::cout<<"以下是等价的"<<std::endl;
+	// 	for(auto ce:cet){
+	// 		std::cout<<ce<<std::endl;
+	// 	}
+	// }
+	std::vector<string> threadIDVec;
+	std::vector<int> width;
+	if (justCheck) {
+		std::vector<std::pair<string, int> > index;
+		for (std::map<string, int>::iterator it = prefix.begin();
+					it !=prefix.end(); ++it ) {
+			if (it->second > threadIDToPathCond[it->first].size()) { // the current trace is incomplete
+				return ;
+			}
+
+			if (preLastPathConds.find(it->first) == preLastPathConds.end())
+			  continue ;
+			string preLastCond = preLastPathConds[it->first];
+			string currentLastCond = pathset[threadIDToPathCond[it->first][it->second-1]].first.getExpression();
+			int num1 = findNumSubstr(preLastCond, "false") % 2;
+			int num2 = findNumSubstr(currentLastCond, "false") % 2;
+
+			if (num1 != num2 && it->first != "0") {
+				revertedID.insert(it->first);
+				invertId.insert(threadIDToPathCond[it->first][it->second-1]);
+				invertTID.insert(it->first);
+				int len = threadIDToPathCond[it->first].size();
+				for (int i = it->second; i < len; ++i) {
+					threadIDToPathCond[it->first].erase(threadIDToPathCond[it->first].end()-1);
+				}
+			}
+			index.push_back(std::make_pair(it->first, it->second-1));
+		}
+	}
+
+	int maxNum = 1;
+	vector<int> sizes;
+	int excluedForT0 = 7;
+	//prefix["0"] = 2; // 7 for pfscanf
+	for (map<string, vector<int> >::reverse_iterator it = threadIDToPathCond.rbegin();
+				it != threadIDToPathCond.rend(); ++it) {
+        if (it->first == "0") continue ;
+		threadIDVec.push_back(it->first);
+		int size;
+		if (prefix.find(it->first) == prefix.end()) { 
+			size = it->second.size();
+		} else {
+			size = it->second.size() - prefix[it->first];
+		}
+
+		maxNum *= (size + 1);
+		std::cout<<"mult:"<<(size+1)<<" "<<it->second.size()<<std::endl;
+		if (sizes.size() == 0)
+		  sizes.push_back(size+1);
+		else
+		  sizes.push_back(sizes.back() * (size+1));
+	}
+	std::reverse(width.begin(), width.end());
+
+	std::reverse(sizes.begin(), sizes.end());
+	sizes.push_back(1);
+	sizes.erase(sizes.begin());
+
+	if (!justCheck)
+	  maxNum --;
+	std::cerr << "MaxNum: " << maxNum << "\n";
+
+	for (int i=0; i<maxNum; ++i) {
+		std::vector<std::pair<string, int> > index;
+
+		int checkNum = i;
+
+		int j = threadIDVec.size();
+		bool flag = true;
+		for (int k=0; k<sizes.size(); ++k) {
+			int ss = sizes[k];
+			int ind = checkNum / ss;
+			index.push_back(std::make_pair(threadIDVec[--j], ind + prefix[threadIDVec[j-1]]));
+
+			if (index.back().second > pathSizeLimit) { 
+				flag = false;
+				break;
+			}
+			checkNum = checkNum % ss;
+		}
+		
+		if (flag) { 
+			if(redundantPath.count(index)){//lz
+			//std::cout<<"去除冗余"<<std::endl;
+			redundances++;
+				continue;
+			}
+		  indexes.push_back(index);
+		  calculateRedundance(index);//lz 
+        }
+
+		continue ;
+
+		for (std::vector<int>::iterator it = width.begin();
+					it != width.end(); ++it)  {
+			int ind = checkNum & (int)(pow((double)2, (double)(*it))-1);
+			if (prefix.find(threadIDVec[j-1]) != prefix.end())
+			  index.push_back(std::make_pair(threadIDVec[--j], ind + prefix[threadIDVec[j-1]]));
+			else
+			  index.push_back(std::make_pair(threadIDVec[--j], ind));
+			checkNum = checkNum >> (*it);
+		}
+		std::reverse(index.begin(), index.end());
+		if(redundantPath.count(index)){//lz
+			//std::cout<<"去除冗余"<<std::endl;
+			redundances++;
+			continue;
+		}
+		indexes.push_back(index);
+		 calculateRedundance(index);//lz
+	}
+
+    if (threadIDToPathCond.find("0") != threadIDToPathCond.end()) {
+        int len = threadIDToPathCond["0"].size();
+        if (prefix.find("0") != prefix.end())
+            len = len - prefix["0"];
+        for (int i=0; i<len; ++i) {
+            std::vector<std::pair<string, int> > index;
+            index.push_back(std::make_pair("0", i+prefix["0"]));
+            indexes.push_back(index);
+        }
+    }
+	//lz
+	std::vector<std::pair<string, int> > index;
+	for (map<string, vector<int> >::reverse_iterator it = threadIDToPathCond.rbegin();
+				it != threadIDToPathCond.rend(); ++it) {
+        //if (it->first == "0") continue ;	
+		
+			index.push_back(std::make_pair(it->first, it->second.size()));
+	}
+	indexes.push_back(index);
+	
+	// for(auto index:indexes){
+	// 	std::cout<<"外环"<<index.size()<<std::endl;
+	// 	for(auto thTo:index){
+	// 		std::cout<<"first:"<<thTo.first<<"second"<<thTo.second<<std::endl;
+	// 	}
+	// }
+	//std::cout<<"减少了:"<<maxNum-indexes.size()<<std::endl;
+
+
+	if (indexes.size() ==0) {
+		struct timeval endday;
+		gettimeofday(&endday, NULL);
+		int timeuse = 1000000 * ( endday.tv_sec - startday.tv_sec ) + 
+			endday.tv_usec - startday.tv_usec;
+
+		cmgen->closeSolver();
+		/*std::cout << "Solver Invoked Num: " << util::stringValueOf(solverInvokedNum) << "\n";
+		std::cerr << "Solver Time: " << util::stringValueOf(solverTime) << "\n";
+		std::cerr << "Check Time: " << util::stringValueOf(timeuse) << "\n";
+		std::cerr << "Constraints Num: " << numConstraints << "\n";
+		std::cerr << "Vars Num: " << numVariables << "\n";*/
+	}
+	// for(auto tmpIndex=indexes.begin();tmpIndex!=indexes.end();tmpIndex++){
+	// 	for(auto threadToPath=tmpIndex->begin();threadToPath!=tmpIndex->end();threadToPath++){
+	// 		std::cout<<"thread:"<<threadToPath->first<<"path:"<<threadToPath->second;
+	// 	}
+	// }
+}
+
 // yqp: generate all possible paths
 void traverseAllPath(ConstModelGen *cmgen) {
 	std::vector<string> threadIDVec;
@@ -191,6 +530,157 @@ void traverseAllPath(ConstModelGen *cmgen) {
 	//prefix["0"] = 2; // 7 for pfscanf
 	for (map<string, vector<int> >::reverse_iterator it = threadIDToPathCond.rbegin();
 				it != threadIDToPathCond.rend(); ++it) {
+        if (it->first == "0") continue ;
+		threadIDVec.push_back(it->first);
+		int size;
+		if (prefix.find(it->first) == prefix.end()) { 
+			size = it->second.size();
+		} else {
+			size = it->second.size() - prefix[it->first];
+		}
+
+		maxNum *= (size + 1);
+		std::cout<<"mult:"<<(size+1)<<" "<<it->second.size()<<std::endl;
+		if (sizes.size() == 0)
+		  sizes.push_back(size+1);
+		else
+		  sizes.push_back(sizes.back() * (size+1));
+	}
+	std::reverse(width.begin(), width.end());
+
+	std::reverse(sizes.begin(), sizes.end());
+	sizes.push_back(1);
+	sizes.erase(sizes.begin());
+
+	if (!justCheck)
+	  maxNum --;
+	std::cerr << "MaxNum: " << maxNum << "\n";
+
+	for (int i=0; i<maxNum; ++i) {
+		std::vector<std::pair<string, int> > index;
+
+		int checkNum = i;
+
+		int j = threadIDVec.size();
+		bool flag = true;
+		for (int k=0; k<sizes.size(); ++k) {
+			int ss = sizes[k];
+			int ind = checkNum / ss;
+			index.push_back(std::make_pair(threadIDVec[--j], ind + prefix[threadIDVec[j-1]]));
+
+			if (index.back().second > pathSizeLimit) { 
+				flag = false;
+				break;
+			}
+			checkNum = checkNum % ss;
+		}
+		
+		if (flag) { 
+		  indexes.push_back(index); 
+        }
+
+		continue ;
+
+		for (std::vector<int>::iterator it = width.begin();
+					it != width.end(); ++it)  {
+			int ind = checkNum & (int)(pow((double)2, (double)(*it))-1);
+			if (prefix.find(threadIDVec[j-1]) != prefix.end())
+			  index.push_back(std::make_pair(threadIDVec[--j], ind + prefix[threadIDVec[j-1]]));
+			else
+			  index.push_back(std::make_pair(threadIDVec[--j], ind));
+			checkNum = checkNum >> (*it);
+		}
+		std::reverse(index.begin(), index.end());
+
+		indexes.push_back(index);
+
+	}
+
+    if (threadIDToPathCond.find("0") != threadIDToPathCond.end()) {
+        int len = threadIDToPathCond["0"].size();
+        if (prefix.find("0") != prefix.end())
+            len = len - prefix["0"];
+        for (int i=0; i<len; ++i) {
+            std::vector<std::pair<string, int> > index;
+            index.push_back(std::make_pair("0", i+prefix["0"]));
+            indexes.push_back(index);
+        }
+    }
+	//lz
+	std::vector<std::pair<string, int> > index;
+	for (map<string, vector<int> >::reverse_iterator it = threadIDToPathCond.rbegin();
+				it != threadIDToPathCond.rend(); ++it) {
+        //if (it->first == "0") continue ;	
+		
+			index.push_back(std::make_pair(it->first, it->second.size()));
+	}
+	indexes.push_back(index);
+	
+	// for(auto index:indexes){
+	// 	std::cout<<"外环"<<std::endl;
+	// 	for(auto thTo:index){
+	// 		std::cout<<"first:"<<thTo.first<<"second"<<thTo.second<<std::endl;
+	// 	}
+	// }
+	
+
+	if (indexes.size() ==0) {
+		struct timeval endday;
+		gettimeofday(&endday, NULL);
+		int timeuse = 1000000 * ( endday.tv_sec - startday.tv_sec ) + 
+			endday.tv_usec - startday.tv_usec;
+
+		cmgen->closeSolver();
+		/*std::cout << "Solver Invoked Num: " << util::stringValueOf(solverInvokedNum) << "\n";
+		std::cerr << "Solver Time: " << util::stringValueOf(solverTime) << "\n";
+		std::cerr << "Check Time: " << util::stringValueOf(timeuse) << "\n";
+		std::cerr << "Constraints Num: " << numConstraints << "\n";
+		std::cerr << "Vars Num: " << numVariables << "\n";*/
+	}
+	for(auto tmpIndex=indexes.begin();tmpIndex!=indexes.end();tmpIndex++){
+		for(auto threadToPath=tmpIndex->begin();threadToPath!=tmpIndex->end();threadToPath++){
+			std::cout<<"thread:"<<threadToPath->first<<"path:"<<threadToPath->second;
+		}
+	}
+}
+bool isMarkedBranch(PathOperation & pathOp ){
+	stringstream ss;
+    ss<<pathOp.getLine(); 
+	std::string id=pathOp.getFilename()+":"+ss.str();
+	if(slicedPathCondLines.count(id)){
+		return true;
+	}
+	return false;
+}
+// lz: generate all possible marked paths
+void traverseAllMarkedPath(ConstModelGen *cmgen) {
+	for(auto thToPath:threadIDToPathCond){
+		int prefixSize=0;
+		if (prefix.find(thToPath.first) == prefix.end()) { 
+			prefixSize =0;
+		} else {
+			prefixSize=prefix[thToPath.first];
+		}
+		int size=thToPath.second.size();
+		for(int i=0;i<size;i++){
+			if(i<prefixSize){
+				markedThreadIDToPathCond[thToPath.first].push_back(thToPath.second[i]);
+			}else{
+				if(isMarkedBranch(pathset[thToPath.second[i]].first)){
+					markedThreadIDToPathCond[thToPath.first].push_back(thToPath.second[i]);
+				}	
+			}
+		}
+	}
+	std::vector<string> threadIDVec;
+	std::vector<int> width;
+
+	int maxNum = 1;
+	vector<int> sizes;
+	int excluedForT0 = 7;
+	//prefix["0"] = 2; // 7 for pfscanf
+	for (map<string, vector<int> >::reverse_iterator it = markedThreadIDToPathCond.rbegin();
+				it != markedThreadIDToPathCond.rend(); ++it) {
         if (it->first == "0") continue ;
 		threadIDVec.push_back(it->first);
 		int size;
@@ -254,8 +744,8 @@ void traverseAllPath(ConstModelGen *cmgen) {
 		indexes.push_back(index);
 	}
 
-    if (threadIDToPathCond.find("0") != threadIDToPathCond.end()) {
-        int len = threadIDToPathCond["0"].size();
+    if (markedThreadIDToPathCond.find("0") != markedThreadIDToPathCond.end()) {
+        int len = markedThreadIDToPathCond["0"].size();
         if (prefix.find("0") != prefix.end())
             len = len - prefix["0"];
         for (int i=0; i<len; ++i) {
@@ -264,22 +754,22 @@ void traverseAllPath(ConstModelGen *cmgen) {
             indexes.push_back(index);
         }
     }
-	//lz
-	std::vector<std::pair<string, int> > index;
-	for (map<string, vector<int> >::reverse_iterator it = threadIDToPathCond.rbegin();
-				it != threadIDToPathCond.rend(); ++it) {
+	//lz 最后个是验证整条轨迹
+	std::vector<std::pair<string, int>> index;
+	for (map<string, vector<int> >::reverse_iterator it = markedThreadIDToPathCond.rbegin();
+				it != markedThreadIDToPathCond.rend(); ++it) {
         //if (it->first == "0") continue ;	
 		
-			index.push_back(std::make_pair(it->first, it->second.size()));
+		index.push_back(std::make_pair(it->first, it->second.size()));
 	}
 	indexes.push_back(index);
 	
-	for(auto index:indexes){
-		std::cout<<"外环"<<std::endl;
-		for(auto thTo:index){
-			std::cout<<"first:"<<thTo.first<<"second"<<thTo.second<<std::endl;
-		}
-	}
+	// for(auto index:indexes){
+	// 	std::cout<<"外环"<<std::endl;
+	// 	for(auto thTo:index){
+	// 		std::cout<<"first:"<<thTo.first<<"second"<<thTo.second<<std::endl;
+	// 	}
+	// }
 	
 
 	if (indexes.size() ==0) {
@@ -603,6 +1093,9 @@ void parse_args(int argc, char *const* argv)
 	cout << endl;
 }
 
+bool isMarkedBranch(string str){
+	return true;
+};
 /**
  * Parse the symbolic information contained in a trace and
  * populate the respective data strucutures
@@ -809,7 +1302,7 @@ void parse_constraints(string symbFilePath)
 				}
 
 			default:  //constraint has form line:constraint
-				{
+				{   
 					if (buf[0] == 'O') {
 						string newBuf = buf;
 						char* toks = strtok(buf, " ");
@@ -946,7 +1439,6 @@ void parse_constraints(string symbFilePath)
 								if(rcounter > 0)
 								  continue;
 							}
-
 							//the unlock completes the locking pair, thus we can add it to the lockpairset
 							LockPairOperation *lo = new LockPairOperation(lockpairStack[obj][threadId].top());
 							lo->setOrder(order);
@@ -954,7 +1446,6 @@ void parse_constraints(string symbFilePath)
 							lo->setUnlockLine(line);
 							lo->setVariableName(obj);
 							numIncLockPairs--;
-
 							//add the unlock operation to the thread memory order set in its correct order
 							SyncOperation* op = new SyncOperation(threadId,obj,0,line,filename,"unlock");
 							op->setOrder(order);
@@ -1269,6 +1760,7 @@ void parse_constraints(string symbFilePath)
 
 				//** create a fake unlock (placed after the last event in the schedule) and complete the locking pair
 				SyncOperation* op = new SyncOperation(threadId,lo->getVariableName(),0,prevLine+1,filename,"unlockFake");
+				std::cout<<"unlockFake"<<op->getConstraintName()<<std::endl;//lz
 
 				//update var id
 				string uvarname = lo->getUnlockOrderConstraintName();
@@ -1391,10 +1883,12 @@ void executeSE(std::string name, std::string sub, std::string sub1) {
 	system(cmd.c_str());
 	cmd = "rm _testSMALL.tar.bz2*";
 	system(cmd.c_str());
-    cmd = "time " + INSTALL_PATH + "/symbiosis-master/SymbiosisSE/Release+Asserts/bin/symbiosisse --allow-external-sym-calls --bb-trace=" + trace + "/example.trace.fail " + bcFile + " --parallel=1 --times="+times+ " --index=" +sub+ " --last="+last + " --trace=" + trace;
+    //cmd = "time " + INSTALL_PATH + "/symbiosis-master/SymbiosisSE/Release+Asserts/bin/symbiosisse --allow-external-sym-calls --bb-trace=" + trace + "/example.trace.fail " + bcFile + " --parallel=1 --times="+times+ " --index=" +sub+ " --last="+last + " --trace=" + trace;
+    cmd = "time " + INSTALL_PATH + "/symbiosis-master/SymbiosisSE/build/bin/klee --libc=uclibc --posix-runtime --bb-trace=" + trace + "/example.trace.fail " + bcFile + " --parallel=1 --times="+times+ " --index=" +sub+ " --last="+last + " --trace=" + trace;
+    //cmd = "time " + INSTALL_PATH + "/symbiosis-master/SymbiosisSE/build/bin/klee --bb-trace=" + trace + "/example.trace.fail " + bcFile + " --parallel=1 --times="+times+ " --index=" +sub+ " --last="+last + " --trace=" + trace;
 
-    string cmd2 = "time " + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/symbiosisSolver --trace-folder="+trace+"/klee-last --model=" + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt --solution=" + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt --with-solver=" + INSTALL_PATH + "/z3/bin/z3 --times=" + sub + " --last=" + sub + " --solutions=" + solutions + " --trace=" + trace + " " + " --bcfile="+bcFile;
-	
+    //string cmd2 = "time " + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/symbiosisSolver --trace-folder="+trace+"/klee-last --model=" + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt --solution=" + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt --with-solver=" + INSTALL_PATH + "/z3/bin/z3 --times=" + sub + " --last=" + sub + " --solutions=" + solutions + " --trace=" + trace + " " + " --bcfile="+bcFile;
+	string cmd2 = "time " + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/symbiosisSolver --trace-folder="+trace+"/klee-last --model=" + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt --solution=" + INSTALL_PATH + "/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt --with-solver=" + INSTALL_PATH + "/z3-z3-4.8.8/build/z3 --times=" + sub + " --last=" + sub + " --solutions=" + solutions + " --trace=" + trace + " " + " --bcfile="+bcFile;
 	FILE *ls = popen("cat paralleled", "r");
 	char b[256];
 	string str = "w";
@@ -1484,10 +1978,10 @@ bool checkPath(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 
     cout << "[Solver] Adding locking-order constraints...\n";
 	if (lockConstraint == "")
-		lockConstraint = cmgen->addLockingConstraints_yqp2(lockpairset);
-		//cmgen->addLockingConstraints_yqp/*WithSimplify*/(lockpairset);
+		//lockConstraint = cmgen->addLockingConstraints_yqp2(lockpairset);
+		lockConstraint = cmgen->addLockingConstraints_lz(lockpairset,markedSynOp);
 	cmgen->z3solver.writeLineZ3(lockConstraint);
-	
+
     cout << "[Solver] Adding fork/start constraints...\n";
 	if (forkConstraint == "")
 		forkConstraint = cmgen->addForkStartConstraints_yqp(forkset, startset);
@@ -1496,12 +1990,13 @@ bool checkPath(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 	cout << "[Solver] Adding join/exit constraints...\n";
 	if (joinConstraint == "")
 		joinConstraint = cmgen->addJoinExitConstraints_yqp(joinset, exitset);
-	std::cout<<joinConstraint<<std::endl;
 	cmgen->z3solver.writeLineZ3(joinConstraint);
 
 	cout << "[Solver] Adding wait/signal constraints...\n";
 	if (waitConstraint == "")
 		waitConstraint = cmgen->addWaitSignalConstraints_yqp(waitset, signalset);
+	   //waitConstraint = cmgen->addWaitSignalConstraints_lz(waitset, signalset,markedSynOp);
+	//std::cout<<"waitConstraint"<<waitConstraint<<std::endl;
 	cmgen->z3solver.writeLineZ3(waitConstraint);
 
 	cout << "\n### SOLVING CONSTRAINT MODEL: Z3\n";
@@ -1535,7 +2030,7 @@ bool checkPath(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 		}
 
 		string name = solutionFile+"_yqp_"+ times + "_" + util::stringValueOf(getpid()) + "_" + util::stringValueOf(tmpIndex);
-        //std::cerr << "file: " << name << " " << globalIndex << "\n";
+        std::cerr << "file: " << name << " " << globalIndex << "\n";
 		scheduleLIB::saveScheduleFile2(name, scheduleLIB::schedule2string2(simpleSch), prefixInd);
 		util::saveVarValues2File(name, solutionValues);
 		globalIndex++;
@@ -1574,19 +2069,20 @@ string getSingleRRConstraint(int locOp1,int locOp2){
 	std::vector<RWOperation> readOps1,readOps2;
 	findReadOpFromLine(locOp1,readOps1);
 	findReadOpFromLine(locOp2,readOps2);
+	std::cout<<"readOps1:"<<readOps1.size()<<"readOp2:"<<readOps2.size()<<std::endl;
 	string constrain="";
 	bool flag=false;
 	Z3Solver z3;
 	for(auto readOp=readOps1.begin();readOp!=readOps1.end();readOp++){	
 		string currentThreadName=(&*readOp)->getThreadId();
 		for(auto readOp1=readOps2.begin();readOp1!=readOps2.end();readOp1++){
-			if(currentThreadName==readOp1->getThreadId()){
+			if(currentThreadName==readOp1->getThreadId()&&readOp1->getVariableName()==readOp->getVariableName()){
 				string tmpConstarin=z3.cNeq(readOp->getConstraintName(),readOp1->getConstraintName());
 				if(!flag){
 					flag=true;
 					constrain=tmpConstarin;
 				}else{
-					z3.cOr(constrain,tmpConstarin);
+					constrain=z3.cOr(constrain,tmpConstarin);
 				}
 			}
 		}
@@ -1782,7 +2278,7 @@ string getMultiWWConstraint(int locOp1,int locOp2){
 				constrain1=z3.cOr(constrain1,constrain2);
 				constrain1=z3.cOr(constrain1,constrain3);
 				constrain1=z3.cOr(constrain1,constrain4);
-                
+
 				if(flag){
 					constrain=z3.cOr(constrain,constrain1);
 				}else{
@@ -1798,16 +2294,19 @@ string getMultiWWConstraint(int locOp1,int locOp2){
 
 bool checkAV(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 			std::map<string, pair<int, string> > prefixInd){
+				
 	ifstream fin;
-	string symbFilePath = "/home/symbiosis-master/Tests/CTests/MPC/mymotivation/prog1";//ing
+	string file=bcFile.substr(0,bcFile.find('_'));
+	string symbFilePath = file;//trace+file;//ing
 	fin.open(symbFilePath);
+	std::cout << ">> Extract AV From File " << symbFilePath << endl;
 	if (!fin.good()) {
-					util::print_state(fin);
+					// util::print_state(fin);
 					cerr << " -> Error opening file "<< symbFilePath <<".\n";
-					fin.close();
-					exit(1);
+					// fin.close();
+					// exit(1);
+					return false;
 	 }
-	 std::cout << ">> Extract AV From File " << symbFilePath << endl;
 	 char buf[10000];
 	 string mode;
 	 int line1,line2;
@@ -1850,8 +2349,10 @@ bool checkAV(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 		
 	 }
 
-
-    std::cout<<"atoConstarint:"<<atoConstarint<<std::endl;
+    std::cout<<"atoConstraint is"<<atoConstarint<<std::endl;
+    if(atoConstarint==""){
+		return false;
+	}
 	identifyBitVecVariables(tmpPathSet);
 
     //tmpPathSet.insert(tmpPathSet.begin(), globalOrderConstraints.begin(), globalOrderConstraints.end());
@@ -1898,8 +2399,8 @@ bool checkAV(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 	numConstraints += cmgen->total;
 	numVariables += cmgen->numUnkownVars;
 	solverInvokedNum++;
-	if (tmpPathSet.back().getFilename().find("Property") != std::string::npos)
-		return success;
+	// if (tmpPathSet.back().getFilename().find("Property") != std::string::npos) lz
+	// 	return success;
 	return success; 
 }
 struct LockToLock{
@@ -1924,10 +2425,10 @@ void checkCircle(int x,int y,set<string> &heldLock,set<LockToLock> **edgeInfo,
 	}
 	string lock1=(*(edgeInfo[x][y].begin())).lock1;
 	string lock2=(*(edgeInfo[x][y].begin())).lock2;
-	std::cout<<"持有锁："<<lock1<<"获取："<<lock2<<std::endl;
+	//std::cout<<"持有锁："<<lock1<<"获取："<<lock2<<std::endl;
 	if(heldLock.count(lock1)!=0){
 		circle.insert(tmp);
-		std::cout<<"发现循环"<<lock2<<std::endl;
+		//std::cout<<"发现循环"<<lock2<<std::endl;
 		return;
 	}
 	for(LockToLock edge:edgeInfo[x][y]){
@@ -1936,13 +2437,13 @@ void checkCircle(int x,int y,set<string> &heldLock,set<LockToLock> **edgeInfo,
 		}
 		heldLock.insert(lock1);
 		visitedThreads.insert(edge.op1->getThreadId());
-		std::cout<<"持有了锁："<<lock1<<"正在获取："<<lock2<<std::endl;
+		//std::cout<<"持有了锁："<<lock1<<"正在获取："<<lock2<<std::endl;
 		tmp.push_back(edge);
-		std::cout<<"tmp size is"<<tmp.size()<<std::endl;
+		//std::cout<<"tmp size is"<<tmp.size()<<std::endl;
 		int index=nameToIndex[lock2];
 		for(int i=0;i<lockNums;i++){
 			if(edgeInfo[index][i].size()!=0){
-				std::cout<<"开始检查："<<index<<" "<<i<<std::endl;
+				//std::cout<<"开始检查："<<index<<" "<<i<<std::endl;
 				checkCircle(index,i,heldLock,edgeInfo,lockNums,nameToIndex,circle,tmp,visitedThreads);
 			}
 		}
@@ -1973,7 +2474,6 @@ bool getDLConstrains(ConstModelGen* cmgen, vector<vector<LockToLock*>>& circle){
 }
 bool checkDL(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 			std::map<string, pair<int, string> > prefixInd){
-				std:cout<<"到这里"<<std::endl;
 	set<string> locks;//存在的锁集合
 	vector<LockToLock> gle;
 	for (map<string, Schedule >::iterator it=old_operationsByThread.begin(); it!=old_operationsByThread.end(); ++it)
@@ -2038,6 +2538,9 @@ bool checkDL(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 			vector<LockToLock> tmp;
 			set<string> visitedThreads;
 			checkCircle(i,j,heldLock,edgeInfo,n,nameToIndex,circle,tmp,visitedThreads);
+			if(circle.size()!=0){
+				break;
+			}
 		}
 	}
 	
@@ -2118,6 +2621,127 @@ bool checkDL(ConstModelGen* cmgen, vector<PathOperation> tmpPathSet,
 	}
 	return false;
 }
+
+void updateWriteSet_lz(map<string, string> lastConds, vector<PathOperation> paths) {
+    markedSynOp.clear();//lz
+    //std::cerr << "in updateWriteSet!\n";
+    std::map<std::string, std::set<std::string> > terminateVars;
+    for (vector<PathOperation>::iterator it = paths.begin();
+            it != paths.end(); ++it) {
+        std::string path = it->getExpression();
+        while (path.find("T0*") != std::string::npos) {
+            path = path.substr(path.find("T0*"));
+            std::string var;
+            if (path.find_first_of(")") < path.find_first_of(" ")) {
+                var = path.substr(0, path.find_first_of(")"));
+                path = path.substr(path.find_first_of(")"));
+            } else {
+                var = path.substr(0, path.find_first_of(" "));
+                path = path.substr(path.find_first_of(" "));
+            }
+            std::string threadId = var.substr(var.find_first_of("-")+1);
+            threadId = threadId.substr(0, threadId.find("-"));
+            terminateVars[threadId].insert(var);
+        }
+    }
+        
+    for (map<string, string >::iterator it = lastConds.begin();
+         it != lastConds.end(); ++it) {
+        std::string path = it->second;
+        while (path.find("T0*") != std::string::npos) {
+            path = path.substr(path.find("T0*"));
+            std::string var;
+            if (path.find_first_of(")") < path.find_first_of(" ")) {
+                var = path.substr(0, path.find_first_of(")"));
+                path = path.substr(path.find_first_of(")"));
+            } else {
+                var = path.substr(0, path.find_first_of(" "));
+                path = path.substr(path.find_first_of(" "));
+            }
+            std::string threadId = var.substr(var.find_first_of("-")+1);
+            threadId = threadId.substr(0, threadId.find("-"));
+            terminateVars[threadId].insert(var);
+        }
+    }
+
+
+     writeset.clear(), readset.clear();
+     operationsByThread.clear();
+     for (map<string, string >::iterator it = lastConds.begin();
+            it != lastConds.end(); ++it) {
+        string threadID = it->first;
+        string lastPath = it->second;
+        bool begin = false;
+        bool end = false;
+        for (vector<Operation*>::iterator oit = old_operationsByThread[threadID].begin();
+             oit != old_operationsByThread[threadID].end(); ++oit) {
+            Operation *o = *oit;
+            string tmp = "";
+            string name = o->getConstraintName().substr(2);
+            if (lastPath.find(name) != string::npos) {
+                tmp = lastPath.substr(lastPath.find(name) + name.size());//去除掉name
+            }
+            if (tmp != "" && (tmp.at(0) == ' ' || tmp.at(0) == ')')) {
+                begin = true;
+                lastPath = lastPath.substr(0, lastPath.find(name)) + tmp;
+            } else if (begin && lastPath.find("T") == std::string::npos) {
+                end = true;
+            }
+			
+            
+            //std::cerr << "!!!: " << tmp << " " << begin << " " << end << " " 
+              //  << threadID << " " << lastPath << " " << o->getConstraintName() << "\n";
+            //if (terminateVars[threadID].find(name) != terminateVars[threadID].end() || !end || dynamic_cast<RWOperation *>(o) == NULL) { lz
+			if (terminateVars[threadID].find(name) != terminateVars[threadID].end() || !end || (dynamic_cast<SyncOperation *>(o)&&dynamic_cast<SyncOperation *>(o)->getType()=="exit")) {
+
+                operationsByThread[threadID].push_back(o);
+				if(auto synOp=dynamic_cast<SyncOperation*>(o)){//lz
+					if(synOp->getType()=="lock"||synOp->getType()=="unlock"
+						||synOp->getType()=="signal"||synOp->getType()=="wait"){
+						markedSynOp.insert(synOp->getConstraintName());
+					}
+				}
+            	if (RWOperation* rw = dynamic_cast<RWOperation*>(o)) {
+                	if (rw->isWriteOp())
+                    	writeset[o->getVariableName()].push_back(*rw);
+                	else
+                   		readset[o->getVariableName()].push_back(*rw);
+            	}
+            } else {
+               // ;std::cerr << "skip: " << threadID << " " << o->getConstraintName() << "\n";
+            }
+        }
+    }
+
+    for (map<string, vector<Operation*> >::iterator it = old_operationsByThread.begin();
+            it != old_operationsByThread.end(); ++it) {
+        string threadID = it->first;
+         if (lastConds.find(threadID) != lastConds.end()) continue;
+          
+         for (vector<Operation*>::iterator oit = old_operationsByThread[threadID].begin();
+            oit != old_operationsByThread[threadID].end(); ++oit) {
+            Operation *o = *oit;
+            operationsByThread[threadID].push_back(o);
+			if(auto synOp=dynamic_cast<SyncOperation*>(o)){//lz
+
+				if(synOp->getType()=="lock"||synOp->getType()=="unlock"
+				||synOp->getType()=="signal"||synOp->getType()=="wait"){
+					markedSynOp.insert(synOp->getConstraintName());
+				}
+			}
+             if (RWOperation* rw = dynamic_cast<RWOperation*>(o)) {
+                  if (rw->isWriteOp())
+                      writeset[o->getVariableName()].push_back(*rw);
+                  else
+                      readset[o->getVariableName()].push_back(*rw);
+             }
+
+         }
+     }
+	return ;
+}
+
+
 void updateWriteSet(map<string, string> lastConds, vector<PathOperation> paths) {
 
     //std::cerr << "in updateWriteSet!\n";
@@ -2479,31 +3103,18 @@ void checkSatisfiability(ConstModelGen* cmgen,
 		}
 	}
 }
-
-/** yqp
+/** lz
  *  Generate and solve the contraint model
  *  for a given set of symbolic traces
  */
-bool verifyConstraintModel2(ConstModelGen* cmgen)
+bool verifyConstraintModel3(ConstModelGen* cmgen)
 {
-	//old_operationsByThread.insert(operationsByThread.begin(), operationsByThread.end());
-	if (justCheck) {
-		for (std::set<int>::iterator it = invertId.begin(); 
-					it != invertId.end(); ++it) {
-			int id = *it;
-
-            bool temp;
-			string expr = kqueryparser::translateExprToZ3(pathset[id].first.getExpression(), temp);
-			expr = cmgen->z3solver.invertBugCondition(expr);
-
-			pathset[id].first.setExpression(expr);
-		}
-	}
     //std::cout<<"formulaFile:"<<formulaFile<<std::endl;
 	string oldFormulaFile = formulaFile;//formulaFile:/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt
 	writeset2.insert(writeset.begin(), writeset.end());
     std::cout<<"size is"<<indexes.size()<<std::endl;
 	for (int sub = 0; sub < indexes.size(); ++sub) {
+		std::cout<<sub<<std::endl;
 		checkID.clear();
 
 		vector<PathOperation> tmpPathSet;
@@ -2546,14 +3157,20 @@ bool verifyConstraintModel2(ConstModelGen* cmgen)
 			vector<PathOperation> currentSet;
 			string threadID = indexes[sub][i].first;
 			int ind = indexes[sub][i].second;
+			int condId=ind==0?-1:markedThreadIDToPathCond[threadID][ind-1];
+			
 
-			for (int j = 0; j < ind; ++j) {
-			  currentSet.push_back(pathset[threadIDToPathCond[threadID][j/*+prefix[threadID]*/]].first);
-              pathIndex += pathset[threadIDToPathCond[threadID][j]].second + " ";
+			for (int j = 0; ind!=0; ++j) {
+				currentSet.push_back(pathset[threadIDToPathCond[threadID][j/*+prefix[threadID]*/]].first);
+                pathIndex += pathset[threadIDToPathCond[threadID][j]].second + " ";
+				if(threadIDToPathCond[threadID][j]==condId){
+					break;
+				}
             }
             
-			int index = threadIDToPathCond[threadID][ind/*+prefix[threadID]*/];
-			if (currentSet.size() == threadIDToPathCond[threadID].size()) {
+			int index = markedThreadIDToPathCond[threadID][ind];
+			unsigned recordConId=markedThreadIDToPathCond[threadID].size()==0?-1:markedThreadIDToPathCond[threadID][markedThreadIDToPathCond[threadID].size()-1];
+			if (condId==recordConId) {
 				prefixInd[threadID] = make_pair(currentSet.size(), pathIndex);
 				tmpPathSet.insert(tmpPathSet.end(), currentSet.begin(), currentSet.end());
                 bool temp;
@@ -2608,13 +3225,371 @@ bool verifyConstraintModel2(ConstModelGen* cmgen)
 		if(sub!= indexes.size()-1){
 			success =checkPath(cmgen, tmpPathSet, prefixInd);
 		}else{
-			  bool checkedAV = checkAV(cmgen, tmpPathSet, prefixInd);
-		      //if(checkedAV){
+			//   bool checkedAV = checkAV(cmgen, tmpPathSet, prefixInd);
+		    //   if(checkedAV){
 			// 	std::cout<<"可以发生原子性违反"<<std::endl;
 			// }
 			// bool checkedDL = checkDL(cmgen, tmpPathSet, prefixInd);
 			// if(checkedDL){
 			// 	std::cout<<"可能有死锁"<<std::endl;
+			// }
+
+		}
+		//bool success = checkPath(cmgen, tmpPathSet, prefixInd);
+		/*
+		if(success){
+			bool checkedAV = checkAV(cmgen, tmpPathSet, prefixInd);
+		    if(checkedAV){
+				std::cout<<"可以发生原子性违反"<<std::endl;
+			}
+			//bool checkedDL = checkDL(cmgen, tmpPathSet, prefixInd);
+			//if(checkedDL){
+			//	std::cout<<"可能有死锁"<<std::endl;
+			//}
+			
+		}
+		*/
+		gettimeofday(&endday, NULL);
+		int timeuse = 1000000 * ( endday.tv_sec - startday.tv_sec ) + 
+		endday.tv_usec - startday.tv_usec; 
+		//printf("check path: %d us\n", timeuse);
+		saveUnsatCore = false;
+		cmgen->resetSolver();
+		if (!timeout && (solutions == "2" || solutions == "3") && !success){ // check whether its an unreachable path
+			if (solutions == "2")
+			  checkSatisfiability(cmgen, indexes[sub], prefixInd);
+			else {
+			  checkSatisfiability2(cmgen, indexes[sub], prefixInd);
+            }
+		}
+
+	}
+	//** clean data structures
+	readset.clear();
+	writeset.clear();
+	lockpairset.clear();
+	startset.clear();
+	exitset.clear();
+	forkset.clear();
+	joinset.clear();
+	waitset.clear();
+	signalset.clear();
+	syncset.clear();
+	pathset.clear();
+	lockpairStack.clear();
+	operationsByThread.clear();
+
+	//return success;
+	return true;
+}
+bool verifyConstraintModel_yqp(ConstModelGen* cmgen)
+{
+	//old_operationsByThread.insert(operationsByThread.begin(), operationsByThread.end());
+	if (justCheck) {
+		for (std::set<int>::iterator it = invertId.begin(); 
+					it != invertId.end(); ++it) {
+			int id = *it;
+
+            bool temp;
+			string expr = kqueryparser::translateExprToZ3(pathset[id].first.getExpression(), temp);
+			expr = cmgen->z3solver.invertBugCondition(expr);
+
+			pathset[id].first.setExpression(expr);
+		}
+	}
+
+	string oldFormulaFile = formulaFile;
+	writeset2.insert(writeset.begin(), writeset.end());
+
+	for (int sub = 0; sub < indexes.size(); ++sub) {
+		checkID.clear();
+
+		vector<PathOperation> tmpPathSet;
+
+		std::map<string, pair<int, string> > prefixInd;
+        if (indexes[sub].size() != 0 && indexes[sub][0].first != "0") {
+            string pathIndex = "";
+            for (unsigned i=0; i<threadIDToPathCond["0"].size(); ++i) {
+                tmpPathSet.push_back(pathset[threadIDToPathCond["0"][i]].first);
+                pathIndex += pathset[threadIDToPathCond["0"][i]].second + " ";
+            }
+            prefixInd["0"] = make_pair(threadIDToPathCond["0"].size(), pathIndex);
+        }
+
+        if (indexes[sub].size() == 0) {
+            PathOperation p = pathset[threadIDToPathCond["0"][0]].first;
+            std::string expr = ("(Eq false "+p.getExpression()+")");
+			PathOperation* po = new PathOperation("0", "", 0, 0,  p.getFilename(), expr);
+            tmpPathSet.push_back(*po);
+        }
+
+		formulaFile = oldFormulaFile+util::stringValueOf(getpid());
+
+		formulaFile = formulaFile + "_" + times + "_" + util::stringValueOf(sub);//+"_"+last;
+
+		cmgen->createZ3Solver();
+
+		lastPathConds.clear();
+		lastPathConds0.clear();
+		lastIndex.clear();
+		lastIndex0.clear();
+		map<string, string > tempLastPath;
+		for (unsigned i = 0; i < indexes[sub].size(); ++i) {
+            string pathIndex = "";
+			vector<PathOperation> currentSet;
+			string threadID = indexes[sub][i].first;
+			int ind = indexes[sub][i].second;
+
+			for (int j = 0; j < ind; ++j) {
+			  currentSet.push_back(pathset[threadIDToPathCond[threadID][j/*+prefix[threadID]*/]].first);
+              pathIndex += pathset[threadIDToPathCond[threadID][j]].second + " ";
+            }
+            
+			int index = threadIDToPathCond[threadID][ind/*+prefix[threadID]*/];
+			if (currentSet.size() == threadIDToPathCond[threadID].size()) {
+				prefixInd[threadID] = make_pair(currentSet.size(), pathIndex);
+				tmpPathSet.insert(tmpPathSet.end(), currentSet.begin(), currentSet.end());
+                bool temp;
+				string expr = kqueryparser::translateExprToZ3(currentSet.back().getExpression(), temp);
+			    lastPathConds[threadID] =  expr;
+				tempLastPath[threadID] = expr;
+				continue;
+                //break;
+			}
+
+            pathIndex += pathset[index].second;
+			prefixInd[threadID] = make_pair(currentSet.size() + 1, pathIndex); 
+
+			PathOperation lastOp = pathset[index].first;
+			string expr = lastOp.getExpression();// kqueryparser::translateExprToZ3(lastOp.getExpression());
+			//expr = cmgen->z3solver.invertBugCondition(expr);
+            expr = ("(Eq false "+expr+")");
+            //if (expr.front() == ' ')
+            //    expr = expr.substr(1);
+
+			string filename = lastOp.getFilename();
+			PathOperation* po = new PathOperation(threadID, "", 0, 0,  filename, expr);
+			currentSet.push_back(*po);
+			tmpPathSet.insert(tmpPathSet.end(), currentSet.begin(), currentSet.end());
+			lastPathConds[threadID] = currentSet.back().getExpression();
+			lastPathConds0[threadID] = currentSet.back().getExpression();
+			checkID.insert(threadID);
+		}
+
+		cout << "\n### GENERATING CONSTRAINT MODEL11: " << sub << "\n";
+
+		saveUnsatCore = true;
+
+		if (!justCheck) {
+			for (map<string, string >::iterator it = preLastPathConds.begin();
+						it != preLastPathConds.end(); ++it) {
+				lastPathConds0[it->first] = it->second;
+			}
+		} else {
+			for (set<string>::iterator it = revertedID.begin();
+						it != revertedID.end(); ++it) {
+				lastPathConds0[*it] = tempLastPath[*it];
+			}
+		}
+
+		updateWriteSet(lastPathConds0, tmpPathSet);
+		struct timeval startday, endday;
+		gettimeofday(&startday, NULL);
+		bool success = checkPath(cmgen, tmpPathSet, prefixInd);
+		gettimeofday(&endday, NULL);
+		int timeuse = 1000000 * ( endday.tv_sec - startday.tv_sec ) + 
+		endday.tv_usec - startday.tv_usec; 
+		//printf("check path: %d us\n", timeuse);
+		saveUnsatCore = false;
+		cmgen->resetSolver();
+		if (!timeout && (solutions == "2" || solutions == "3") && !success){ // check whether its an unreachable path
+			if (solutions == "2")
+			  checkSatisfiability(cmgen, indexes[sub], prefixInd);
+			else {
+			  checkSatisfiability2(cmgen, indexes[sub], prefixInd);
+            }
+		}
+
+	}
+
+	//** clean data structures
+	readset.clear();
+	writeset.clear();
+	lockpairset.clear();
+	startset.clear();
+	exitset.clear();
+	forkset.clear();
+	joinset.clear();
+	waitset.clear();
+	signalset.clear();
+	syncset.clear();
+	pathset.clear();
+	lockpairStack.clear();
+	operationsByThread.clear();
+
+	//return success;
+	return true;
+}
+
+/** yqp
+ *  Generate and solve the contraint model
+ *  for a given set of symbolic traces
+ */
+bool verifyConstraintModel2(ConstModelGen* cmgen)
+{
+	//old_operationsByThread.insert(operationsByThread.begin(), operationsByThread.end());
+	if (justCheck) {
+		for (std::set<int>::iterator it = invertId.begin(); 
+					it != invertId.end(); ++it) {
+			int id = *it;
+
+            bool temp;
+			string expr = kqueryparser::translateExprToZ3(pathset[id].first.getExpression(), temp);
+			expr = cmgen->z3solver.invertBugCondition(expr);
+
+			pathset[id].first.setExpression(expr);
+		}
+	}
+	string oldFormulaFile = formulaFile;//formulaFile:/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt
+	writeset2.insert(writeset.begin(), writeset.end());
+	for (int sub = 0; sub < indexes.size(); ++sub) {
+	//for (int sub = indexes.size()-1; sub >=0; sub--) {
+
+		checkID.clear();
+
+		vector<PathOperation> tmpPathSet;
+
+		std::map<string, pair<int, string> > prefixInd;
+        if (indexes[sub].size() != 0 && indexes[sub][0].first != "0") {//这块逻辑处理主线程
+            string pathIndex = "";
+            for (unsigned i=0; i<threadIDToPathCond["0"].size(); ++i) {
+                tmpPathSet.push_back(pathset[threadIDToPathCond["0"][i]].first);
+                pathIndex += pathset[threadIDToPathCond["0"][i]].second + " ";
+            }
+            prefixInd["0"] = make_pair(threadIDToPathCond["0"].size(), pathIndex);
+        }
+
+        if (indexes[sub].size() == 0) {
+		    //std::cout<<"threadIDToPathCond[0]"<<threadIDToPathCond["0"][0]<<"pathset:"<<pathset.size()<<std::endl;
+           if(threadIDToPathCond["0"].size()!=0){
+				PathOperation p = pathset[threadIDToPathCond["0"][0]].first;
+            	std::string expr = ("(Eq false "+p.getExpression()+")");
+				PathOperation* po = new PathOperation("0", "", 0, 0,  p.getFilename(), expr);
+            	tmpPathSet.push_back(*po);
+		   }
+			
+        }
+
+
+		formulaFile = oldFormulaFile+util::stringValueOf(getpid());
+
+		formulaFile = formulaFile + "_" + times + "_" + util::stringValueOf(sub);//+"_"+last;
+
+		cmgen->createZ3Solver();
+
+		lastPathConds.clear();
+		lastPathConds0.clear();
+		lastIndex.clear();
+		lastIndex0.clear();
+		map<string, string > tempLastPath;
+		bool flag=false;
+		for (unsigned i = 0; i < indexes[sub].size(); ++i) {//lz
+            string pathIndex = "";
+			vector<PathOperation> currentSet;
+			string threadID = indexes[sub][i].first;
+			int ind = indexes[sub][i].second;
+       
+			for (int j = 0; j < ind; ++j) {
+			  currentSet.push_back(pathset[threadIDToPathCond[threadID][j/*+prefix[threadID]*/]].first);
+              pathIndex += pathset[threadIDToPathCond[threadID][j]].second + " ";
+            }
+            //std::cout<<"threadIDToPathCond[threadID].size():"<<threadIDToPathCond[threadID].size()<<"inde:"<<ind<<"index"<<threadIDToPathCond[threadID][ind/*+prefix[threadID]*/]<<std::endl;
+			int index = threadIDToPathCond[threadID][ind/*+prefix[threadID]*/];
+			if (currentSet.size() == threadIDToPathCond[threadID].size()) {
+				prefixInd[threadID] = make_pair(currentSet.size(), pathIndex);
+				tmpPathSet.insert(tmpPathSet.end(), currentSet.begin(), currentSet.end());
+                bool temp;
+				string expr = kqueryparser::translateExprToZ3(currentSet.back().getExpression(), temp);
+				// std::cout<<"origin:"<<currentSet.back().getExpression()<<std::endl;
+				// std::cout<<"expr:"<<expr<<std::endl;
+			    lastPathConds[threadID] =  expr;
+				tempLastPath[threadID] = expr;
+				continue;
+                //break;
+			}
+
+            pathIndex += pathset[index].second;
+			prefixInd[threadID] = make_pair(currentSet.size() + 1, pathIndex); 
+
+			PathOperation lastOp = pathset[index].first;
+			//lz
+			// string recordPath=lastOp.getFilename()+"@"+std::to_string(lastOp.getLine());//.getLine();
+			// if(!slicedPathCondLines.count(recordPath)&&slicedPathCondLines.size()!=0){
+			// 	//if(lastOp.getLine()==168){
+			// 		flag=true;
+			// 		std::cout<<"可以略过"<<recordPath<<lastOp.getFilename()<<std::endl;
+			// 		lastOp.print();
+			// 		savedPath++;
+			// 		break;
+			// 	//}	
+			// }
+         
+
+			string expr = lastOp.getExpression();// kqueryparser::translateExprToZ3(lastOp.getExpression());
+			//expr = cmgen->z3solver.invertBugCondition(expr);
+            expr = ("(Eq false "+expr+")");
+            //if (expr.front() == ' ')
+            //    expr = expr.substr(1);
+            //std::cout<<"expr is"<<expr<<std::endl;
+			string filename = lastOp.getFilename();
+			PathOperation* po = new PathOperation(threadID, "", 0, 0,  filename, expr);
+			currentSet.push_back(*po);
+			tmpPathSet.insert(tmpPathSet.end(), currentSet.begin(), currentSet.end());
+			lastPathConds[threadID] = currentSet.back().getExpression();
+			lastPathConds0[threadID] = currentSet.back().getExpression();
+			checkID.insert(threadID);
+		}
+        if(flag){
+			continue;
+		}
+		cout << "\n### GENERATING CONSTRAINT MODEL11: " << sub << "\n";
+
+		saveUnsatCore = true;
+
+		if (!justCheck) {
+			for (map<string, string >::iterator it = preLastPathConds.begin();
+						it != preLastPathConds.end(); ++it) {
+				lastPathConds0[it->first] = it->second;
+			}
+		} else {
+			for (set<string>::iterator it = revertedID.begin();
+						it != revertedID.end(); ++it) {
+				lastPathConds0[*it] = tempLastPath[*it];
+			}
+		}
+
+		//updateWriteSet(lastPathConds0, tmpPathSet);//lz
+		updateWriteSet_lz(lastPathConds0, tmpPathSet);//lz
+		struct timeval startday, endday;
+		gettimeofday(&startday, NULL);
+		bool success=true;
+		if(sub!= indexes.size()-1){
+			success =checkPath(cmgen, tmpPathSet, prefixInd);
+		}else{
+			bool checkedAV = checkAV(cmgen, tmpPathSet, prefixInd);
+		    if(checkedAV){
+				std::cout<<"可以发生原子性违反"<<++curentPathTime<<" "<<pathString<<std::endl;
+			}
+			bool checkedDL = checkDL(cmgen, tmpPathSet, prefixInd);
+			if(checkedDL){
+				std::cout<<"可能有死锁"<<std::endl;
+			}
+			// if(checkedAV||checkedDL){
+			// 		struct timeval end;
+			// gettimeofday(&end, NULL); // 记录起始时间
+			// std::cout << "end:Seconds: " << end.tv_sec<< "Microseconds: " << end.tv_usec << std::endl;
+
+
 			// }
 
 		}
@@ -2721,7 +3696,7 @@ void writePathStr() {
     str = pathString;
 
 	std::string fileName = "CheckedPath";
-    //std::cout<<"pathString:"<<pathString<<std::endl;
+    std::cout<<"pathString:"<<pathString<<std::endl;
 
 	fromPath = str;
 	ifstream fin;
@@ -2737,9 +3712,10 @@ void writePathStr() {
 	while (!fin.eof()) {
 		fin.getline(buf, 10000);
 		ss = buf;
+		curentPathTime++;
 		if (ss == str) { 
-			std::cerr << " redundant str: " << str << " " << prePath << "\n"; 
-			//exit(0);
+			std::cerr << " redundant str: " << str << " " << ss << "\n"; 
+			exit(0);//lz
 			return ;
 		}
 	}
@@ -2762,8 +3738,28 @@ void generateConstraintModel2()
 
 	//** instatiate a constrain model generator object
 	ConstModelGen* cmgen = new ConstModelGen();
+	string file=bcFile.substr(0,bcFile.find('_')).append(".sliced.dot");
+   
 	//cmgen->createZ3Solver();
+	//lz 解析切片结果
+	std::cout<<"打开："<<file<<std::endl;
+	ifstream fin;
+	fin.open(file);
+	if (fin.good()) {
+		char buf1[10000];
+		string ss1;
+		while (!fin.eof()) {
+			fin.getline(buf1, 10000);
+        	ss1 = buf1;
+			slicedPathCondLines.insert(ss1);
+		}
+		//std::cout<<"branch is"<<slicedPathCondLines.size()<<std::endl;
+	}
+	// for(auto s:slicedPathCondLines){
+	// 	std::cout<<s<<std::endl;
+	// }
 
+    
 	//** find symbolic trace files and populate map symTracesByThread
 	DIR* dirFile = opendir(symbFolderPath2.c_str());//该文件夹为klee的测试结果输出文件夹：klee-out-number
 	if ( dirFile ) {
@@ -2800,7 +3796,7 @@ void generateConstraintModel2()
 				fin.open(symbFilePath);
 				if (!fin.good()) {
 					util::print_state(fin);
-					cerr << " -> Error opening file "<< symbFilePath <<".\n";
+					std::cerr << " -> Error opening file "<< symbFilePath <<".\n";
 					fin.close();
 					exit(1);
 				}
@@ -2891,7 +3887,6 @@ void generateConstraintModel2()
 	}
 
     
-
 	//** test all combinations of traces to find a feasible buggy interleaving
 	vector<int> traceCounterByThread; //vector of thread counters (each array position corresponds to a given thread): used to iteratively pick a different thread symb trace to generate the constraint model
 
@@ -2918,11 +3913,12 @@ void generateConstraintModel2()
 		
 
 		writePathStr();//记录已经探索过的轨迹
-		//verfix(cmgen);
 		traverseAllPath(cmgen);
+		//traverseAllPathReduceRedundance(cmgen);
+		//traverseAllMarkedPath(cmgen);
 		//debug: print constraints
-		//if(debug)
-		if(true)
+		if(debug)
+		//if(true)
 		{
 			cout<< "\n-- READ SET\n";
 			for(map< string, vector<RWOperation> >::iterator out = readset.begin(); out != readset.end(); ++out)
@@ -3022,12 +4018,21 @@ void generateConstraintModel2()
 
 		//** generate the constraint model and try to solve it
 		foundBug = verifyConstraintModel2(cmgen);
+		
+		
+		//foundBug = verifyConstraintModel_yqp(cmgen);
+		//foundBug = verifyConstraintModel3(cmgen);
 		attempts++;
 		break;
 
 	}while(!foundBug && updateCounters(keys, &traceCounterByThread));
-
+	std::cout<<"静态分析减少:"<<savedPath<<std::endl;
+	std::cout<<"角色冗余减少:"<<redundances<<std::endl;
+    std::cout<<"一共减少："<<savedPath+redundances<<std::endl;
 	cmgen->closeSolver();
+	struct timeval  end;
+	gettimeofday(&end, NULL); // 记录起始时间
+	std::cout << "end:Seconds: " << end.tv_sec<< "Microseconds: " << end.tv_usec << std::endl;
 }
 
 /* Generate pairs of events to be inverted, between a given set of operations

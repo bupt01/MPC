@@ -1,0 +1,247 @@
+(set-option :produce-unsat-cores true)
+(echo "MEMORY-ORDER CONSTRAINTS -----")
+
+(declare-const OR-T0*__sym_uint32_model_version_77437192*0-0-1&fd_init.c@100 Int)
+(assert (>= OR-T0*__sym_uint32_model_version_77437192*0-0-1&fd_init.c@100 0))
+(assert (<= OR-T0*__sym_uint32_model_version_77437192*0-0-1&fd_init.c@100 35))
+(declare-const OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993 Int)
+(assert (>= OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993 0))
+(assert (<= OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_ret*pthread_mutex_init1__77436880*0-0-0&agetKlee2.c@996 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_ret*pthread_mutex_init1__77436880*0-0-0&agetKlee2.c@996 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_ret*pthread_mutex_init1__77436880*0-0-0&agetKlee2.c@996 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_proto_77436920*0-0-1&agetKlee2.c@1075 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_proto_77436920*0-0-1&agetKlee2.c@1075 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_proto_77436920*0-0-1&agetKlee2.c@1075 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_ret*pthread_create1__77437656*0-0-0&agetKlee2.c@1080 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_ret*pthread_create1__77437656*0-0-0&agetKlee2.c@1080 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_ret*pthread_create1__77437656*0-0-0&agetKlee2.c@1080 35))
+(declare-const OS-fork_1-0-0&agetKlee2.c@1080 Int)
+(assert (>= OS-fork_1-0-0&agetKlee2.c@1080 0))
+(assert (<= OS-fork_1-0-0&agetKlee2.c@1080 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_ret*pthread_create2__77437712*0-0-0&agetKlee2.c@1081 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_ret*pthread_create2__77437712*0-0-0&agetKlee2.c@1081 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_ret*pthread_create2__77437712*0-0-0&agetKlee2.c@1081 35))
+(declare-const OS-fork_2-0-0&agetKlee2.c@1081 Int)
+(assert (>= OS-fork_2-0-0&agetKlee2.c@1081 0))
+(assert (<= OS-fork_2-0-0&agetKlee2.c@1081 35))
+(declare-const OS-exit-0&agetKlee2.c@1082 Int)
+(assert (>= OS-exit-0&agetKlee2.c@1082 0))
+(assert (<= OS-exit-0&agetKlee2.c@1082 35))
+(assert (! (< OR-T0*__sym_uint32_model_version_77437192*0-0-1&fd_init.c@100 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993 OR-T0*__klee_posix_wrapped_main_ret*pthread_mutex_init1__77436880*0-0-0&agetKlee2.c@996 OR-T0*__klee_posix_wrapped_main_proto_77436920*0-0-1&agetKlee2.c@1075 OR-T0*__klee_posix_wrapped_main_ret*pthread_create1__77437656*0-0-0&agetKlee2.c@1080 OS-fork_1-0-0&agetKlee2.c@1080 OR-T0*__klee_posix_wrapped_main_ret*pthread_create2__77437712*0-0-0&agetKlee2.c@1081 OS-fork_2-0-0&agetKlee2.c@1081 OS-exit-0&agetKlee2.c@1082):named MO0))
+
+(declare-const OS-start-1&agetKlee2.c@661 Int)
+(assert (>= OS-start-1&agetKlee2.c@661 0))
+(assert (<= OS-start-1&agetKlee2.c@661 35))
+(declare-const OR-T1*get_proto_77437648*0-1-1&agetKlee2.c@664 Int)
+(assert (>= OR-T1*get_proto_77437648*0-1-1&agetKlee2.c@664 0))
+(assert (<= OR-T1*get_proto_77437648*0-1-1&agetKlee2.c@664 35))
+(declare-const OW-T1*get_proto_77437648*0-1-0&agetKlee2.c@665 Int)
+(assert (>= OW-T1*get_proto_77437648*0-1-0&agetKlee2.c@665 0))
+(assert (<= OW-T1*get_proto_77437648*0-1-0&agetKlee2.c@665 35))
+(declare-const OR-T1*get_proto_77437648*0-1-2&agetKlee2.c@666 Int)
+(assert (>= OR-T1*get_proto_77437648*0-1-2&agetKlee2.c@666 0))
+(assert (<= OR-T1*get_proto_77437648*0-1-2&agetKlee2.c@666 35))
+(declare-const OW-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@677 Int)
+(assert (>= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@677 0))
+(assert (<= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@677 35))
+(declare-const OW-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@678 Int)
+(assert (>= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@678 0))
+(assert (<= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@678 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@679 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@679 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@679 35))
+(declare-const OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@679 Int)
+(assert (>= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@679 0))
+(assert (<= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@679 35))
+(declare-const OW-T0*__klee_posix_wrapped_main_shared*wthread_45816000*0-1-0&agetKlee2.c@680 Int)
+(assert (>= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816000*0-1-0&agetKlee2.c@680 0))
+(assert (<= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816000*0-1-0&agetKlee2.c@680 35))
+(declare-const OW-T0*__klee_posix_wrapped_main_shared*wthread_45816004*4-1-0&agetKlee2.c@681 Int)
+(assert (>= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816004*4-1-0&agetKlee2.c@681 0))
+(assert (<= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816004*4-1-0&agetKlee2.c@681 35))
+(declare-const OW-T0*__klee_posix_wrapped_main_shared*wthread_45816002*2-1-0&agetKlee2.c@682 Int)
+(assert (>= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816002*2-1-0&agetKlee2.c@682 0))
+(assert (<= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816002*2-1-0&agetKlee2.c@682 35))
+(declare-const OW-T0*__klee_posix_wrapped_main_shared*wthread_45816304*304-1-0&agetKlee2.c@683 Int)
+(assert (>= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816304*304-1-0&agetKlee2.c@683 0))
+(assert (<= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816304*304-1-0&agetKlee2.c@683 35))
+(declare-const OW-T0*__klee_posix_wrapped_main_shared*wthread_45816296*296-1-0&agetKlee2.c@684 Int)
+(assert (>= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816296*296-1-0&agetKlee2.c@684 0))
+(assert (<= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816296*296-1-0&agetKlee2.c@684 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@349 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@349 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@349 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@498 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@498 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@498 35))
+(declare-const OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@498 Int)
+(assert (>= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@498 0))
+(assert (<= OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@498 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1&agetKlee2.c@499 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1&agetKlee2.c@499 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1&agetKlee2.c@499 35))
+(declare-const OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499 Int)
+(assert (>= OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499 0))
+(assert (<= OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@500 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@500 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@500 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-1&agetKlee2.c@500 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-1&agetKlee2.c@500 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-1&agetKlee2.c@500 35))
+(declare-const OS-exit-1&agetKlee2.c@501 Int)
+(assert (>= OS-exit-1&agetKlee2.c@501 0))
+(assert (<= OS-exit-1&agetKlee2.c@501 35))
+(assert (! (< OS-start-1&agetKlee2.c@661 OR-T1*get_proto_77437648*0-1-1&agetKlee2.c@664 OW-T1*get_proto_77437648*0-1-0&agetKlee2.c@665 OR-T1*get_proto_77437648*0-1-2&agetKlee2.c@666 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@677 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@678 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@679 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@679 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816000*0-1-0&agetKlee2.c@680 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816004*4-1-0&agetKlee2.c@681 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816002*2-1-0&agetKlee2.c@682 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816304*304-1-0&agetKlee2.c@683 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816296*296-1-0&agetKlee2.c@684 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@349 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@498 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@498 OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1&agetKlee2.c@499 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@500 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-1&agetKlee2.c@500 OS-exit-1&agetKlee2.c@501):named MO1))
+
+(declare-const OS-start-2&agetKlee2.c@274 Int)
+(assert (>= OS-start-2&agetKlee2.c@274 0))
+(assert (<= OS-start-2&agetKlee2.c@274 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1&agetKlee2.c@224 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1&agetKlee2.c@224 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1&agetKlee2.c@224 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2&agetKlee2.c@233 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2&agetKlee2.c@233 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2&agetKlee2.c@233 35))
+(declare-const OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1&agetKlee2.c@239 Int)
+(assert (>= OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1&agetKlee2.c@239 0))
+(assert (<= OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1&agetKlee2.c@239 35))
+(declare-const OS-exit-2&agetKlee2.c@240 Int)
+(assert (>= OS-exit-2&agetKlee2.c@240 0))
+(assert (<= OS-exit-2&agetKlee2.c@240 35))
+(assert (! (< OS-start-2&agetKlee2.c@274 OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1&agetKlee2.c@224 OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2&agetKlee2.c@233 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1&agetKlee2.c@239 OS-exit-2&agetKlee2.c@240):named MO2))
+
+(assert (distinct  OR-T0*__sym_uint32_model_version_77437192*0-0-1&fd_init.c@100 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993 OR-T0*__klee_posix_wrapped_main_ret*pthread_mutex_init1__77436880*0-0-0&agetKlee2.c@996 OR-T0*__klee_posix_wrapped_main_proto_77436920*0-0-1&agetKlee2.c@1075 OR-T0*__klee_posix_wrapped_main_ret*pthread_create1__77437656*0-0-0&agetKlee2.c@1080 OS-fork_1-0-0&agetKlee2.c@1080 OR-T0*__klee_posix_wrapped_main_ret*pthread_create2__77437712*0-0-0&agetKlee2.c@1081 OS-fork_2-0-0&agetKlee2.c@1081 OS-exit-0&agetKlee2.c@1082 OS-start-1&agetKlee2.c@661 OR-T1*get_proto_77437648*0-1-1&agetKlee2.c@664 OW-T1*get_proto_77437648*0-1-0&agetKlee2.c@665 OR-T1*get_proto_77437648*0-1-2&agetKlee2.c@666 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@677 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@678 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@679 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@679 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816000*0-1-0&agetKlee2.c@680 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816004*4-1-0&agetKlee2.c@681 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816002*2-1-0&agetKlee2.c@682 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816304*304-1-0&agetKlee2.c@683 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816296*296-1-0&agetKlee2.c@684 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@349 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@498 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@498 OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1&agetKlee2.c@499 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@500 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-1&agetKlee2.c@500 OS-exit-1&agetKlee2.c@501 OS-start-2&agetKlee2.c@274 OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1&agetKlee2.c@224 OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2&agetKlee2.c@233 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1&agetKlee2.c@239 OS-exit-2&agetKlee2.c@240))
+
+
+(echo "READ-WRITE CONSTRAINTS WITH SIMPLIFY -----")
+
+(declare-const R-T0*__klee_posix_wrapped_main_proto_77436920*0-0-1 Int)
+
+(declare-const R-T0*__klee_posix_wrapped_main_ret*pthread_create1__77437656*0-0-0 Int)
+
+(declare-const R-T0*__klee_posix_wrapped_main_ret*pthread_create2__77437712*0-0-0 Int)
+
+(declare-const R-T0*__klee_posix_wrapped_main_ret*pthread_mutex_init1__77436880*0-0-0 Int)
+
+(declare-const R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1 Int)
+
+(declare-const R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2 Int)
+
+(declare-const R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1 Int)
+
+(declare-const R-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0 Int)
+
+(declare-const R-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-1 Int)
+
+(declare-const R-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0 Int)
+
+(declare-const R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1 Int)
+
+(declare-const R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0 Int)
+
+(declare-const R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1 Int)
+
+(declare-const R-T0*__sym_uint32_model_version_77437192*0-0-1 Int)
+
+(declare-const R-T1*get_proto_77437648*0-1-1 Int)
+
+(declare-const R-T1*get_proto_77437648*0-1-2 Int)
+
+(declare-const InitR-T0*__klee_posix_wrapped_main_proto_77436920*0 Int)
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_proto_77436920*0-0-1 InitR-T0*__klee_posix_wrapped_main_proto_77436920*0))):named RWC0))
+
+(declare-const InitR-T0*__klee_posix_wrapped_main_ret*pthread_create1__77437656*0 Int)
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_ret*pthread_create1__77437656*0-0-0 InitR-T0*__klee_posix_wrapped_main_ret*pthread_create1__77437656*0))):named RWC1))
+
+(declare-const InitR-T0*__klee_posix_wrapped_main_ret*pthread_create2__77437712*0 Int)
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_ret*pthread_create2__77437712*0-0-0 InitR-T0*__klee_posix_wrapped_main_ret*pthread_create2__77437712*0))):named RWC2))
+
+(declare-const InitR-T0*__klee_posix_wrapped_main_ret*pthread_mutex_init1__77436880*0 Int)
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_ret*pthread_mutex_init1__77436880*0-0-0 InitR-T0*__klee_posix_wrapped_main_ret*pthread_mutex_init1__77436880*0))):named RWC3))
+
+(declare-const InitR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0 Int)
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1 InitR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0) (< OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1&agetKlee2.c@224 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993) (< OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1&agetKlee2.c@224 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499))
+ (and (= R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1 0) (< OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993 OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1&agetKlee2.c@224) (or (< OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993) (< OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1&agetKlee2.c@224 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499)))
+ (and (= R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1 (+ 1 R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1)) (< OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499 OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1&agetKlee2.c@224) (or (< OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499) (< OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1&agetKlee2.c@224 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993)))):named RWC4))
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2 InitR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0) (< OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2&agetKlee2.c@233 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993) (< OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2&agetKlee2.c@233 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499))
+ (and (= R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2 0) (< OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993 OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2&agetKlee2.c@233) (or (< OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993) (< OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2&agetKlee2.c@233 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499)))
+ (and (= R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2 (+ 1 R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1)) (< OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499 OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2&agetKlee2.c@233) (or (< OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499) (< OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2&agetKlee2.c@233 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993)))):named RWC5))
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1 InitR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0) (< OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1&agetKlee2.c@499 OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993))
+ (and (= R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1 0) (< OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993 OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1&agetKlee2.c@499))):named RWC6))
+
+(declare-const InitR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272 Int)
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0 InitR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272) (< OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@679 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@677))
+ (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0 0) (< OW-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@677 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@679))):named RWC7))
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-1 InitR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272) (< OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-1&agetKlee2.c@500 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@677))
+ (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-1 0) (< OW-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@677 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-1&agetKlee2.c@500))):named RWC8))
+
+(declare-const InitR-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280 Int)
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0 InitR-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280) (< OR-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@349 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@678))
+ (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0 35147) (< OW-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@678 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@349))):named RWC9))
+
+(declare-const InitR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288 Int)
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1 InitR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288) (< OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1&agetKlee2.c@239 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@679) (< OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1&agetKlee2.c@239 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@498))
+ (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1 R-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0) (< OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@679 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1&agetKlee2.c@239) (or (< OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@498 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@679) (< OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1&agetKlee2.c@239 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@498)))
+ (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1 (+ 1 R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0)) (< OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@498 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1&agetKlee2.c@239))):named RWC10))
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0 InitR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288) (< OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@498 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@679))
+ (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0 R-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0) (< OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@679 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@498))):named RWC11))
+
+(assert (! (or (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1 InitR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288) (< OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@500 OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@498))
+ (and (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1 (+ 1 R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0)) (< OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@498 OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@500))):named RWC12))
+
+(declare-const InitR-T0*__sym_uint32_model_version_77437192*0 Int)
+
+(assert (! (or (and (= R-T0*__sym_uint32_model_version_77437192*0-0-1 InitR-T0*__sym_uint32_model_version_77437192*0))):named RWC13))
+
+(declare-const InitR-T1*get_proto_77437648*0 Int)
+
+(assert (! (or (and (= R-T1*get_proto_77437648*0-1-1 InitR-T1*get_proto_77437648*0))):named RWC14))
+
+(assert (! (or (and (= R-T1*get_proto_77437648*0-1-2 InitR-T1*get_proto_77437648*0) (< OR-T1*get_proto_77437648*0-1-2&agetKlee2.c@666 OW-T1*get_proto_77437648*0-1-0&agetKlee2.c@665))
+ (and (= R-T1*get_proto_77437648*0-1-2 1) (< OW-T1*get_proto_77437648*0-1-0&agetKlee2.c@665 OR-T1*get_proto_77437648*0-1-2&agetKlee2.c@666))):named RWC15))
+
+(echo "PATH CONSTRAINTS -----")
+
+(assert (! (= 1 R-T1*get_proto_77437648*0-1-2):named PC0_T1))
+
+(assert (! (= false (= R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1 R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2)):named PC1_T2))
+
+(echo "LOCKING CONSTRAINTS -----")
+
+
+(echo "FORK-START CONSTRAINTS -----")
+
+(assert (! (< OS-fork_1-0-0&agetKlee2.c@1080 OS-start-1&agetKlee2.c@661):named FSC0))
+
+(assert (! (< OS-fork_2-0-0&agetKlee2.c@1081 OS-start-2&agetKlee2.c@274):named FSC1))
+
+
+(echo "JOIN-EXIT CONSTRAINTS -----")
+
+
+(echo "WAIT-SIGNAL CONSTRAINTS -----")
+
+
+(check-sat)
+
+(get-model)
+
+(get-unsat-core)
+
+(echo "end")
+(reset)
+

@@ -1,0 +1,211 @@
+MEMORY-ORDER CONSTRAINTS -----
+READ-WRITE CONSTRAINTS WITH SIMPLIFY -----
+PATH CONSTRAINTS -----
+LOCKING CONSTRAINTS -----
+FORK-START CONSTRAINTS -----
+JOIN-EXIT CONSTRAINTS -----
+WAIT-SIGNAL CONSTRAINTS -----
+sat
+(model 
+  ;; universe for distinct-elems!0:
+  ;;   distinct-elems!0!val!0 distinct-elems!0!val!10 distinct-elems!0!val!18 distinct-elems!0!val!30 distinct-elems!0!val!19 distinct-elems!0!val!32 distinct-elems!0!val!34 distinct-elems!0!val!20 distinct-elems!0!val!27 distinct-elems!0!val!3 distinct-elems!0!val!15 distinct-elems!0!val!16 distinct-elems!0!val!1 distinct-elems!0!val!8 distinct-elems!0!val!17 distinct-elems!0!val!24 distinct-elems!0!val!21 distinct-elems!0!val!23 distinct-elems!0!val!12 distinct-elems!0!val!2 distinct-elems!0!val!4 distinct-elems!0!val!31 distinct-elems!0!val!33 distinct-elems!0!val!29 distinct-elems!0!val!11 distinct-elems!0!val!13 distinct-elems!0!val!9 distinct-elems!0!val!25 distinct-elems!0!val!28 distinct-elems!0!val!7 distinct-elems!0!val!6 distinct-elems!0!val!5 distinct-elems!0!val!14 distinct-elems!0!val!26 distinct-elems!0!val!22 
+  ;; -----------
+  ;; definitions for universe elements:
+  (declare-fun distinct-elems!0!val!0 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!10 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!18 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!30 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!19 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!32 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!34 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!20 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!27 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!3 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!15 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!16 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!1 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!8 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!17 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!24 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!21 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!23 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!12 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!2 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!4 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!31 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!33 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!29 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!11 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!13 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!9 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!25 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!28 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!7 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!6 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!5 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!14 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!26 () distinct-elems!0)
+  (declare-fun distinct-elems!0!val!22 () distinct-elems!0)
+  ;; cardinality constraint:
+  (forall ((x distinct-elems!0))
+          (or (= x distinct-elems!0!val!0)
+              (= x distinct-elems!0!val!10)
+              (= x distinct-elems!0!val!18)
+              (= x distinct-elems!0!val!30)
+              (= x distinct-elems!0!val!19)
+              (= x distinct-elems!0!val!32)
+              (= x distinct-elems!0!val!34)
+              (= x distinct-elems!0!val!20)
+              (= x distinct-elems!0!val!27)
+              (= x distinct-elems!0!val!3)
+              (= x distinct-elems!0!val!15)
+              (= x distinct-elems!0!val!16)
+              (= x distinct-elems!0!val!1)
+              (= x distinct-elems!0!val!8)
+              (= x distinct-elems!0!val!17)
+              (= x distinct-elems!0!val!24)
+              (= x distinct-elems!0!val!21)
+              (= x distinct-elems!0!val!23)
+              (= x distinct-elems!0!val!12)
+              (= x distinct-elems!0!val!2)
+              (= x distinct-elems!0!val!4)
+              (= x distinct-elems!0!val!31)
+              (= x distinct-elems!0!val!33)
+              (= x distinct-elems!0!val!29)
+              (= x distinct-elems!0!val!11)
+              (= x distinct-elems!0!val!13)
+              (= x distinct-elems!0!val!9)
+              (= x distinct-elems!0!val!25)
+              (= x distinct-elems!0!val!28)
+              (= x distinct-elems!0!val!7)
+              (= x distinct-elems!0!val!6)
+              (= x distinct-elems!0!val!5)
+              (= x distinct-elems!0!val!14)
+              (= x distinct-elems!0!val!26)
+              (= x distinct-elems!0!val!22)))
+  ;; -----------
+  (define-fun OR-T0*__klee_posix_wrapped_main_proto_77436920*0-0-1&agetKlee2.c@1075 () Int
+    3)
+  (define-fun OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@498 () Int
+    29)
+  (define-fun OS-exit-1&agetKlee2.c@501 () Int
+    35)
+  (define-fun R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1 () Int
+    0)
+  (define-fun OW-T0*__klee_posix_wrapped_main_shared*wthread_45816304*304-1-0&agetKlee2.c@683 () Int
+    26)
+  (define-fun R-T1*get_proto_77437648*0-1-2 () Int
+    1)
+  (define-fun OS-fork_2-0-0&agetKlee2.c@1081 () Int
+    8)
+  (define-fun OW-T0*__klee_posix_wrapped_main_shared*wthread_45816296*296-1-0&agetKlee2.c@684 () Int
+    27)
+  (define-fun OS-fork_1-0-0&agetKlee2.c@1080 () Int
+    5)
+  (define-fun OR-T1*get_proto_77437648*0-1-2&agetKlee2.c@666 () Int
+    15)
+  (define-fun R-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0 () Int
+    0)
+  (define-fun OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-0&agetKlee2.c@499 () Int
+    32)
+  (define-fun R-T0*__klee_posix_wrapped_main_ret*pthread_mutex_init1__77436880*0-0-0 () Int
+    70)
+  (define-fun OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1&agetKlee2.c@239 () Int
+    20)
+  (define-fun OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@498 () Int
+    30)
+  (define-fun OW-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0&agetKlee2.c@679 () Int
+    22)
+  (define-fun R-T0*__klee_posix_wrapped_main_ret*pthread_create1__77437656*0-0-0 () Int
+    68)
+  (define-fun InitR-T1*get_proto_77437648*0 () Int
+    76)
+  (define-fun R-T0*__sym_uint32_model_version_77437192*0-0-1 () Int
+    75)
+  (define-fun InitR-T0*__sym_uint32_model_version_77437192*0 () Int
+    75)
+  (define-fun R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2 () Int
+    0)
+  (define-fun OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1&agetKlee2.c@224 () Int
+    13)
+  (define-fun OR-T0*__klee_posix_wrapped_main_ret*pthread_mutex_init1__77436880*0-0-0&agetKlee2.c@996 () Int
+    2)
+  (define-fun OR-T0*__klee_posix_wrapped_main_ret*pthread_create2__77437712*0-0-0&agetKlee2.c@1081 () Int
+    6)
+  (define-fun R-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0 () Int
+    35147)
+  (define-fun R-T0*__klee_posix_wrapped_main_ret*pthread_create2__77437712*0-0-0 () Int
+    69)
+  (define-fun InitR-T0*__klee_posix_wrapped_main_ret*pthread_mutex_init1__77436880*0 () Int
+    70)
+  (define-fun R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1 () Int
+    1)
+  (define-fun InitR-T0*__klee_posix_wrapped_main_ret*pthread_create1__77437656*0 () Int
+    68)
+  (define-fun OR-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@349 () Int
+    28)
+  (define-fun R-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-1 () Int
+    0)
+  (define-fun OS-exit-2&agetKlee2.c@240 () Int
+    21)
+  (define-fun InitR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288 () Int
+    2)
+  (define-fun OS-start-1&agetKlee2.c@661 () Int
+    9)
+  (define-fun OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-1&agetKlee2.c@500 () Int
+    34)
+  (define-fun OR-T0*__klee_posix_wrapped_main_ret*pthread_create1__77437656*0-0-0&agetKlee2.c@1080 () Int
+    4)
+  (define-fun R-T0*__klee_posix_wrapped_main_proto_77436920*0-0-1 () Int
+    67)
+  (define-fun OW-T0*__klee_posix_wrapped_main_shared*wthread_45816000*0-1-0&agetKlee2.c@680 () Int
+    23)
+  (define-fun R-T1*get_proto_77437648*0-1-1 () Int
+    76)
+  (define-fun OS-start-2&agetKlee2.c@274 () Int
+    10)
+  (define-fun OW-T0*__klee_posix_wrapped_main_shared*wthread_45816004*4-1-0&agetKlee2.c@681 () Int
+    24)
+  (define-fun InitR-T0*__klee_posix_wrapped_main_proto_77436920*0 () Int
+    67)
+  (define-fun OW-T0*__klee_posix_wrapped_main_shared*wthread_45816002*2-1-0&agetKlee2.c@682 () Int
+    25)
+  (define-fun OW-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280-1-0&agetKlee2.c@678 () Int
+    18)
+  (define-fun OW-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-0-0&agetKlee2.c@993 () Int
+    1)
+  (define-fun R-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-1 () Int
+    0)
+  (define-fun OR-T1*get_proto_77437648*0-1-1&agetKlee2.c@664 () Int
+    11)
+  (define-fun OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-1-1&agetKlee2.c@499 () Int
+    31)
+  (define-fun OR-T0*__sym_uint32_model_version_77437192*0-0-1&fd_init.c@100 () Int
+    0)
+  (define-fun OR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0-2-2&agetKlee2.c@233 () Int
+    16)
+  (define-fun R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-0 () Int
+    0)
+  (define-fun OR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@679 () Int
+    19)
+  (define-fun InitR-T0*__klee_posix_wrapped_main_ret*pthread_create2__77437712*0 () Int
+    69)
+  (define-fun OW-T1*get_proto_77437648*0-1-0&agetKlee2.c@665 () Int
+    14)
+  (define-fun OS-exit-0&agetKlee2.c@1082 () Int
+    12)
+  (define-fun R-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-2-1 () Int
+    2)
+  (define-fun OW-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272-1-0&agetKlee2.c@677 () Int
+    17)
+  (define-fun OR-T0*__klee_posix_wrapped_main_shared*wthread_45816288*288-1-1&agetKlee2.c@500 () Int
+    33)
+  (define-fun InitR-T0*__klee_posix_wrapped_main_shared*wthread_45816280*280 () Int
+    0)
+  (define-fun InitR-T0*__klee_posix_wrapped_main_shared*bwritten_77435616*0 () Int
+    0)
+  (define-fun InitR-T0*__klee_posix_wrapped_main_shared*wthread_45816272*272 () Int
+    0)
+)
+(error "line 243 column 15: unsat core is not available")
+end

@@ -48,6 +48,9 @@ public:
     void addPathConstraints2(std::vector<PathOperation> pathset);
     void addLockingConstraints(std::map<std::string, std::vector<LockPairOperation> > lockpairset);
 	std::string addLockingConstraints_yqp2(std::map<std::string, std::vector<LockPairOperation> > lockpairset);
+    std::string addLockingConstraints_lz(std::map<std::string, std::vector<LockPairOperation> > lockpairset,std::set<std::string> markedSynOp);//lz
+    std::string addWaitSignalConstraints_lz(std::map<std::string, std::vector<SyncOperation> > waitset, std::map<std::string,std::vector<SyncOperation>> signalset,std::set<std::string> markedSynOp);//lz
+
     void addLockingConstraintsWithSimplify(std::map<std::string, std::vector<LockPairOperation> > lockpairset);
 	void addLockingConstraints_yqp(std::map<std::string, std::vector<LockPairOperation> > lockpairset);
     void addForkStartConstraints(std::map<std::string, std::vector<SyncOperation> > forkset, std::map<std::string, SyncOperation> startset);
@@ -56,6 +59,7 @@ public:
 	std::string addJoinExitConstraints_yqp(std::map<std::string, std::vector<SyncOperation> > joinset, std::map<std::string, SyncOperation> exitset);
     void addWaitSignalConstraints(std::map<std::string, std::vector<SyncOperation> > waitset, std::map<std::string, std::vector<SyncOperation> > signalset);
 	std::string addWaitSignalConstraints_yqp(std::map<std::string, std::vector<SyncOperation> > waitset, std::map<std::string, std::vector<SyncOperation> > signalset);
+
     void addAvisoConstraints(std::map<std::string, std::vector<Operation*> > operationsByThread, AvisoEventVector fulltrace);
     void openOutputFile(); //opens a file used to store the generated model
     bool solve();   //tries to solve the model and returns true if the model has a solution

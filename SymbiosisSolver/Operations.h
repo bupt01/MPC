@@ -137,6 +137,8 @@ class LockPairOperation : public Operation{
     void setFakeUnlock(bool isFake);
     std::string getLockOrderConstraintName();
     std::string getUnlockOrderConstraintName();
+    std::string getLockConstraintName();
+    std::string getUnlockConstraintName();
     void print();
 };
 

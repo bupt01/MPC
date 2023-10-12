@@ -1,0 +1,38 @@
+begin:Seconds: 1688193872Microseconds: 817481
+sh: 1: rm: Argument list too long
+cmd: time /home/symbiosis-master/SymbiosisSE/build/bin/klee --libc=uclibc --posix-runtime --bb-trace=/home/symbiosis-master/SymbiosisSolver/example.trace.fail /home/symbiosis-master/SymbiosisSolver/agetKlee.bc --times=0 --index=0 --last=0 --trace=/home/symbiosis-master/SymbiosisSolver/
+KLEE: ERROR: Loading file /home/symbiosis-master/SymbiosisSolver/agetKlee.bc failed: No such file or directory
+Command exited with non-zero status 1
+0.00user 0.00system 0:00.00elapsed 100%CPU (0avgtext+0avgdata 22988maxresident)k
+0inputs+0outputs (0major+1617minor)pagefaults 0swaps
+cmd01:time /home/symbiosis-master/SymbiosisSolver/symbiosisSolver --trace-folder=/home/symbiosis-master/SymbiosisSolver/klee-last --model=/home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt --solution=/home/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt --with-solver=/home/z3-z3-4.8.8/build/z3 --parallel=0 --times=551377 --last=0 --solutions=1 --trace=/home/symbiosis-master/SymbiosisSolver/  --bcfile=agetKlee.bc
+# MODE: FIND BUG-TRIGGERING SCHEDULE
+# CONTEXT SWITCH REDUCTION: off
+# DSP:		(options = extended, short, "")
+# SYMBOLIC TRACES: /home/symbiosis-master/SymbiosisSolver/klee-last
+# SOLVER: /home/z3-z3-4.8.8/build/z3
+# CONSTRAINT MODEL: /home/symbiosis-master/SymbiosisSolver/tmp/modelCrasher.txt
+# SOLUTION: /home/symbiosis-master/SymbiosisSolver/tmp/failCrasher.txt
+
+[Solver] Init solver... /home/z3-z3-4.8.8/build/z3 -T:30 -smt2 -in 
+[Solver] create Z3 pid 551851
+打开：agetKlee.bc.sliced.dot
+
+---- ATTEMPT 0 0
+->Error opening fileCheckedPath.
+MaxNum: 0
+
+### GENERATING CONSTRAINT MODEL11: 0
+>> Extract AV From File agetKlee.bc
+ -> Error opening file agetKlee.bc.
+gle size is0
+potential deadLock is0
+静态分析减少:0
+角色冗余减少:0
+一共减少：0
+>> Killing Z3 pid 551851 and 551852
+end:Seconds: 1688193873Microseconds: 217073
+0.00user 0.00system 0:00.00elapsed 100%CPU (0avgtext+0avgdata 4344maxresident)k
+0inputs+8outputs (0major+185minor)pagefaults 0swaps
+dirFile/home/symbiosis-master/SymbiosisSolver/tmp/
+time:0.463752
